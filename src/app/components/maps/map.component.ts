@@ -84,7 +84,6 @@ interface RouteChunk {
     styleUrls: ['./map.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-
 export class MapComponent {
     public center = signal<[number, number]>([37.617698, 55.755864]);
     public zoom = signal<number>(3);
