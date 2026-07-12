@@ -374,7 +374,6 @@ export class MapComponent {
 
     public getFeatureProperties(feature: any): any {
         if (!feature) return {};
-
         const props = feature.properties || {};
 
         return {
@@ -389,7 +388,6 @@ export class MapComponent {
             geometry: feature.geometry
         };
     }
-
 
     public onMapClick = (
         object: any,
@@ -419,15 +417,12 @@ export class MapComponent {
 
                     this.roadSelectionState.setSelection(response);
                     this.roadSelectionFeatures.set(response);
-
                 },
 
                 error: error => {
 
                     console.error(error);
-
                     this.roadSelectionFeatures.set([]);
-
                     this.roadSelectionState.clear();
 
                 }
@@ -457,7 +452,6 @@ export class MapComponent {
                 return null;
         }
     }
-
 
     private makeCircleIcon(
         color = '#ff3333',
@@ -506,7 +500,6 @@ export class MapComponent {
 
 
     private _watchDirectionPoints(): void {
-
         this.directionState.state$
             .pipe(
                 map(state => ({
@@ -547,7 +540,6 @@ export class MapComponent {
                 }
 
                 if (state.destination.coordinates) {
-
                     features.push({
                         source: 'direction-markers',
                         id: 'destination',
