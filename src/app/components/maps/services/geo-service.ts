@@ -8,13 +8,9 @@ import { YandexConfigService } from './yandex-config.service';
     providedIn: 'root'
 })
 export class GeoService {
-
-
-
     constructor(private http: HttpClient,
         private config: YandexConfigService
     ) { }
-
 
     private get api(): any {
         return this.config.value.apiBaseUrl;
@@ -26,8 +22,10 @@ export class GeoService {
         zoom: number
     ): Observable<any> {
 
+        //https://ymaps-road.onrender.com
         return this.http.post<any>(
-            `${this.api}/road-select`,
+            `https://ymaps-road.onrender.com/road-select`,
+            // `${this.api}/road-select`,
             {
                 longitude,
                 latitude,
@@ -50,7 +48,7 @@ export class GeoService {
     ): Observable<any> {
 
         return this.http.post<any>(
-            `${this.api}/road-axle`,
+            `https://ymaps-road.onrender.com/road-axle`,
             {
                 route_features: routeFeatures,
                 bounds,

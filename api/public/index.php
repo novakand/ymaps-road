@@ -61,9 +61,9 @@ try {
             );
 
             $result = $service->findRoadByPoint(
-                longitude: (float)($payload['longitude'] ?? 0),
-                latitude: (float)($payload['latitude'] ?? 0),
-                zoom: (int)($payload['zoom'] ?? 16)
+                longitude: (float) ($payload['longitude'] ?? 0),
+                latitude: (float) ($payload['latitude'] ?? 0),
+                zoom: (int) ($payload['zoom'] ?? 16)
             );
 
             break;
@@ -81,46 +81,11 @@ try {
             $result = $service->analyze(
                 routeFeatures: $payload['route_features'] ?? [],
                 bounds3857: $payload['bounds'] ?? [],
-                zoom: (int)($payload['zoom'] ?? 10)
+                zoom: (int) ($payload['zoom'] ?? 10)
             );
 
             break;
 
-        case '/road-details':
-
-            $service = new RoadDetailsService(
-                $rgis,
-                $skdf
-            );
-
-            $result = $service->getRoadDetails(
-                $payload['road'] ?? []
-            );
-
-            break;
-
-        case '/road-layer':
-
-            $service = new RoadLayerService(
-                $rgis
-            );
-
-            $result = $service->getTile(
-                x: (int)($payload['x'] ?? 0),
-                y: (int)($payload['y'] ?? 0),
-                z: (int)($payload['z'] ?? 0)
-            );
-
-            break;
-
-        default:
-
-            http_response_code(404);
-
-            $result = [
-                'success' => false,
-                'message' => 'Route not found'
-            ];
     }
 
 } catch (Throwable $e) {
