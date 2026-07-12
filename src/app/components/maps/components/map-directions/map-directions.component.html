@@ -1,0 +1,724 @@
+<div>
+
+
+    <div [formGroup]="form">
+
+        <div class="flex items-center justify-between p-6 ">
+            <ng-container *ngIf="noProgress">
+                <p-skeleton
+                    height="2rem"
+                    width="100%"
+                    class="w-full mb-3"
+                ></p-skeleton>
+            </ng-container>
+            <ng-container *ngIf="!noProgress">
+                <div>
+                    <span class="p-dialog-title font-semibold text-xl">
+                        Маршрут
+                    </span>
+
+
+                </div>
+                <div class="w-spacer">&nbsp;</div>
+                <div class="flex">
+
+                    <p-button
+                        [rounded]="true"
+                        [text]="true"
+                        size="large"
+                        pTooltip="Настройки"
+                        [tooltipDisabled]="!isLargeScreen"
+                        styleClass="text-color"
+                        icon="pi pi-sliders-h"
+                        (onClick)="onSettings()"
+                    />
+                    <ng-container *ngIf="isLargeScreen">
+                        <p-button
+                            class=""
+                            (click)="toggleSideBar()"
+                            styleClass="text-xl mr-4"
+                            [tooltipDisabled]="!isLargeScreen"
+                            [rounded]="true"
+                            badgeSeverity="contrast"
+                            size="large"
+                            pTooltip="Карта"
+                            tooltipPosition="bottom"
+                            icon="pi pi-map"
+                            [text]="true"
+                        />
+
+                    </ng-container>
+                </div>
+            </ng-container>
+        </div>
+        <div class="p-4">
+
+            <ng-container *ngIf="noProgress">
+                <div class="flex gap-3 w-full items-start">
+
+                    <div
+                        class="flex flex-col items-center justify-between"
+                        style="height: 120px; padding-top: 12px;"
+                    >
+                        <p-skeleton
+                            shape="circle"
+                            size="1rem"
+                            styleClass="bg-gray-200"
+                        ></p-skeleton>
+                        <div class="h-12 w-0.5 bg-gray-200"></div>
+                        <p-skeleton
+                            shape="circle"
+                            size="1rem"
+                            styleClass="bg-gray-200"
+                        ></p-skeleton>
+                    </div>
+
+
+                    <div class="flex-1 flex flex-col gap-4">
+
+                        <p-skeleton
+                            width="100%"
+                            height="44px"
+                            styleClass="border-round-xl"
+                        ></p-skeleton>
+
+
+                        <p-skeleton
+                            width="100%"
+                            height="44px"
+                            styleClass="border-round-xl"
+                        ></p-skeleton>
+                    </div>
+
+
+                    <div
+                        class="flex items-center"
+                        style="height: 120px;"
+                    >
+                        <p-skeleton
+                            shape="circle"
+                            size="2rem"
+                        ></p-skeleton>
+                    </div>
+                </div>
+
+
+                <div class="flex gap-4 mt-5 pl-7">
+                    <p-skeleton
+                        width="140px"
+                        height="1.5rem"
+                    ></p-skeleton>
+                    <p-skeleton
+                        width="80px"
+                        height="1.5rem"
+                    ></p-skeleton>
+                </div>
+            </ng-container>
+
+            <div *ngIf="!noProgress">
+                <p-timeline
+                    #timeline
+                    [value]="timelineData$ | async"
+                    cdkDropList
+                    (cdkDropListDropped)="onDrop($event)"
+                    class="w-full md:w-20rem"
+                >
+
+                    <ng-template
+                        pTemplate="marker"
+                        let-event
+                    >
+                        <span
+                            pTooltip="{{ pointType[event.type] || '' }}"
+                            class="p-timeline-event-marker"
+                            [ngStyle]="{'border-color': event.type === 'loading' ? '#8BDE8C' : (event.type === 'unloading' ? '#FF5757' : '#ccced2')}"
+                        >
+                        </span>
+                    </ng-template>
+
+                    <ng-template
+                        #content
+                        let-event
+                    >
+                        <div
+                            cdkDrag
+                            cdkDragLockAxis="y"
+                            cdkDragBoundary="timeline"
+                            [cdkDragDisabled]="form.get('waypoints')?.value.length === 0"
+                        >
+                            <p-inputgroup
+                                class="!w-full"
+                                styleClass="w-full"
+                                [ngClass]="form.get('waypoints')?.value.length === 0 ? ['pr-8'] : []"
+                            >
+                                <ng-container
+                                    *ngIf="event?.formControlName === 'from' || event?.formControlName === 'to'; else fieldPointTemplate"
+                                >
+                                    <ng-container [formGroupName]="event.formControlName">
+                                        <p-iconfield class="!w-full">
+                                            <p-autocomplete
+                                                class="w-full"
+                                                styleClass="w-full"
+                                                (onClear)="onUnselect(event?.formControlName)"
+                                                (onUnselect)="onUnselect(event?.formControlName)"
+                                                (onKeyUp)="onKeyUpOriginDestination(event?.formControlName)"
+                                                panelStyleClass="{'width':'100%'}"
+                                                [appendTo]="'body'"
+                                                [inputId]="event"
+                                                [forceSelection]="true"
+                                                (onSelect)="onSelectOriginDestination(event.formControlName)"
+                                                [group]="false"
+                                                [minLength]="3"
+                                                [placeholder]="event.placeholder"
+                                                [inputStyle]="{'width':'100%'}"
+                                                inputStyleClass="w-full text-900 font-semibold w-full"
+                                                [showClear]="false"
+                                                [delay]="200"
+                                                [optionLabel]="'label'"
+                                                [suggestions]="searchData$ | async"
+                                                [style]="{'width':'100%'}"
+                                                [inputStyle]="{'width':'100%'}"
+                                                [formControlName]="'value'"
+                                                [showEmptyMessage]="true"
+                                                (completeMethod)="onSearch($event)"
+                                                [emptyMessage]="'Нет результатов поиска'"
+                                            >
+                                                <ng-template
+                                                    let-item
+                                                    #item
+                                                >
+                                                    <span
+                                                        #template
+                                                        [tooltipDisabled]="!(template | isTextOverflowing)"
+                                                        pTooltip="{{ item?.label || '' }}"
+                                                    >
+                                                        {{ item?.label }}
+                                                    </span>
+                                                </ng-template>
+                                            </p-autocomplete>
+                                            <p-inputicon
+                                                *ngIf="form.get(event.formControlName)?.get('loading')?.value"
+                                                styleClass="pi pi-spinner pi-spin"
+                                            >
+                                            </p-inputicon>
+
+                                            <p-inputicon
+                                                *ngIf="!form.get(event.formControlName)?.get('loading')?.value && form.get(event.formControlName)?.get('value')?.value"
+                                                (click)="onRemoveOriginDestination(event.formControlName)"
+                                                styleClass="pi pi-times cursor-pointer"
+                                            />
+                                        </p-iconfield>
+                                    </ng-container>
+                                </ng-container>
+
+                                <button
+                                    cdkDragHandle
+                                    *ngIf="(event?.formControlName === 'from' || event?.formControlName === 'to')
+                && form.get('waypoints')?.value.length > 0"
+                                    class="p-map-item-link p-link ml-4 cursor-pointer"
+                                    type="button"
+                                >
+                                    <i
+                                        pRipple
+                                        class="p-map-item-icon pi pi-bars"
+                                    ></i>
+                                </button>
+                            </p-inputgroup>
+                            <button
+                                *ngIf="event?.formControlName === 'from' && form.get('waypoints')?.value.length === 0"
+                                class="p-map-item-link map-config-button-reverse"
+                                (click)="onDirectionsReverse()"
+                                style="transform: rotate(90deg);"
+                                type="button"
+                            >
+                                <i
+                                    pRipple
+                                    class="p-map-item-icon pi pi-arrow-right-arrow-left"
+                                ></i>
+                            </button>
+
+                            <ng-template #fieldPointTemplate>
+                                <p-inputgroup
+                                    #div
+                                    formArrayName="waypoints"
+                                    class="!w-full"
+                                    styleClass="w-full"
+                                >
+                                    <ng-container [formGroupName]="event.index">
+                                        <p-iconfield class="!w-full">
+                                            <p-autocomplete
+                                                #waypoints
+                                                fluid="true"
+                                                [appendTo]="'body'"
+                                                styleClass="w-full"
+                                                [forceSelection]="true"
+                                                [inputId]="event"
+                                                (onSelect)="onSelectWaypoint(event.formControl, event.type)"
+                                                (onClear)="onUnSelectWaypoint(event.formControl)"
+                                                (onUnselect)="onUnSelectWaypoint(event.formControl)"
+                                                (onKeyUp)="onKeyUpWaypoint(event?.formControl)"
+                                                [group]="false"
+                                                [placeholder]="event.placeholder"
+                                                [showClear]="false"
+                                                [delay]="200"
+                                                [suggestions]="searchData$ | async"
+                                                [formControlName]="event.formControlName"
+                                                (completeMethod)="onSearch($event)"
+                                                [emptyMessage]="'Нет результатов поиска'"
+                                            >
+                                                <ng-template
+                                                    let-item
+                                                    #item
+                                                >
+                                                    <span
+                                                        #template
+                                                        [tooltipDisabled]="!(template | isTextOverflowing)"
+                                                        pTooltip="{{ item?.label || '' }}"
+                                                    >
+                                                        {{ item?.label }}
+                                                    </span>
+                                                </ng-template>
+                                            </p-autocomplete>
+                                            <p-inputicon
+                                                *ngIf="!event?.loading"
+                                                (click)="onRemoveWaypoints(event.index)"
+                                                styleClass="pi pi-times cursor-pointer"
+                                            />
+                                            <p-inputicon
+                                                *ngIf="event?.loading"
+                                                styleClass="pi pi-spinner pi-spin"
+                                            />
+                                        </p-iconfield>
+                                        <button
+                                            cdkDragHandle
+                                            class="p-map-item-link ml-4 hover:text-[var(--text-color)]"
+                                            type="button"
+                                        >
+                                            <i
+                                                pRipple
+                                                class="p-map-item-icon pi pi-bars"
+                                            ></i>
+                                        </button>
+                                    </ng-container>
+                                </p-inputgroup>
+
+                            </ng-template>
+                        </div>
+                    </ng-template>
+
+                    <ng-template
+                        #opposite
+                        let-event
+                    >
+                    </ng-template>
+                </p-timeline>
+
+                <div class="flex flex-wrap items-start gap-2 mt-6">
+                    <p-button
+                        styleClass="p-0 pt-4 pl-2"
+                        icon="pi pi-plus-circle"
+                        label="Добавить промежуточную точку"
+                        (click)="onAddWaypoint('unloading')"
+                        [link]="true"
+                    />
+                    <p-button
+                        styleClass="p-0 pt-4 pl-2"
+                        icon="pi pi-trash"
+                        label="Сбросить"
+                        (click)="onReset()"
+                        [link]="true"
+                    />
+                </div>
+            </div>
+
+            <ng-container *ngIf="!(directionService.error$ | async); else errorTpl">
+                <ng-container *ngIf="routes.length">
+                    <div class="flex items-center justify-between mt-10 mb-4">
+
+                        <div class="flex items-center gap-2 ">
+
+
+                            <p-toggleswitch
+                                inputId="layer-axle"
+                                [(ngModel)]="layers.axle"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="onOnlineChange($event)"
+                            />
+
+                            <label
+                                for="layer-axle"
+                                pTooltip="Автоматическое обновление данных нормативная нагрузка, тонн/ось (использовать для более протяженных маршрутов)"
+                            >
+                                Нагрузка на ось
+                            </label>
+                        </div>
+
+                        <div class="flex gap-2 ml-auto ">
+                            <ng-container *ngFor="let panel of routes; let i = index">
+                                <p-button
+                                    (onClick)="routeActive = panel.index; onRouteChange(panel.index)"
+                                    [rounded]="true"
+                                    [label]="(panel.index + 1).toString()"
+                                    styleClass="w-8 h-8 p-0"
+                                    [outlined]="routeActive !== panel.index"
+                                />
+                            </ng-container>
+                        </div>
+
+
+
+                    </div>
+                    <p-listbox
+                        [options]="routes"
+                        [(ngModel)]="routeActive"
+                        metaKeySelection="true"
+                        (onChange)="onRouteListboxChanges($event)"
+                        (onClick)="onRouteClick($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        [highlightOnSelect]="true"
+                        styleClass="border-none shadow-none"
+                        listStyleClass=""
+                        optionValue="index"
+                        class="w-full!"
+                    >
+                        <ng-template
+                            pTemplate="item"
+                            let-route
+                        >
+
+                            <div class="grid grid-cols-[1fr_auto] items-center gap-3 w-full">
+
+                                <div
+                                    #customerElement
+                                    class="font-semibold truncate"
+                                    [tooltipDisabled]="!(customerElement | isTextOverflowing)"
+                                    [pTooltip]="'Маршрут ' + (route.index + 1)"
+                                >
+                                    Маршрут {{ route.index + 1 }}
+                                </div>
+
+                                <div class="font-semibold whitespace-nowrap">
+
+                                    {{ route.duration?.text }}
+                                    —
+                                    {{ route.distance?.text }}
+
+                                </div>
+
+                            </div>
+
+                        </ng-template>
+                    </p-listbox>
+                </ng-container>
+            </ng-container>
+
+            <ng-template #errorTpl>
+                <div *ngIf="directionService.error$ | async as error">
+                    <div class="flex justify-center text-900 font-semibold gap-6 mt-10 text-lg">
+                        {{ error === 'Маршрут не найден' ? 'Маршрут не найден' : 'Маршрут не найден' }}
+                    </div>
+                </div>
+            </ng-template>
+
+
+
+        </div>
+
+
+
+
+
+    </div>
+
+    <p-drawer
+        [(visible)]="isVisibleRouteSteps"
+        modal="false"
+        styleClass="border-none p-drawer-bottom-append"
+        position="bottom"
+        showCloseIcon="true"
+    >
+        <ng-template #header>
+
+            <div class="flex align-center justify-between mb-0 gap-8">
+
+                <div>
+
+                    <div class="text-900 text-xl font-semibold">
+                        {{ dataSourceStep?.summary }}
+                    </div>
+
+                    <div class="text-900 text-xl font-semibold">
+                        {{ dataSourceStep?.duration }}
+                        —
+                        {{ dataSourceStep?.distance }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </ng-template>
+
+        <div class="directions-instructions">
+
+            <div class="directions-instructions-wrapper">
+
+                <ol class="directions-steps">
+
+                    <li
+                        *ngFor="let step of dataSourceStep?.steps"
+                        (mouseover)="onStepMouseover(step)"
+                        (mouseout)="onStepMouseout()"
+                        (click)="onStepClick(step)"
+                        [attr.data-lng]="getStepCoordinates(step)?.[0]"
+                        [attr.data-lat]="getStepCoordinates(step)?.[1]"
+                        class="directions-step"
+                    >
+
+                        <span
+                            class="directions-icon"
+                            [ngClass]="'directions-icon-' + (step | directionsIcon)"
+                        ></span>
+
+                        <div class="directions-step-maneuver">
+
+                            {{ step.properties?.text || step.properties?.name }}
+
+                        </div>
+
+                        <div
+                            class="directions-step-distance"
+                            *ngIf="step.properties.distance"
+                        >
+
+                            {{ step.properties.distance.text }}
+
+                        </div>
+
+                    </li>
+
+                </ol>
+
+            </div>
+
+        </div>
+
+    </p-drawer>
+
+    <p-drawer
+        [(visible)]="isVisibleRoadSelection"
+        (onHide)="onRoadSelectionHide()"
+        modal="false"
+        showCloseIcon="true"
+        styleClass="border-none p-drawer-bottom-road"
+        position="bottom"
+    >
+        <ng-template #header>
+            <div class="flex align-items-center justify-content-between mb-0">
+                <span class="text-900 text-xl font-semibold">
+                    {{ selectedRoad[0]?.properties?.road_name || 'Нет данных' }}
+                </span>
+            </div>
+        </ng-template>
+
+        <div class="col-span-12 lg:col-span-12 h-full mb-10">
+            <ng-container *ngIf="selectedRoad?.length; else roadNotFound">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-12 mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Road ID</span>
+                            <span>{{ selectedRoad[0]?.properties?.road_id }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Тип дороги</span>
+                            <span>{{ selectedRoad[0]?.properties?.value_of_the_road?.name }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Начало</span>
+                            <span>{{ selectedRoad[0]?.properties?.start_km }} км</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Конец</span>
+                            <span>{{ selectedRoad[0]?.properties?.finish_km }} км</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Длина</span>
+                            <span>{{ selectedRoad[0]?.properties?.geom_length }} км</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">GID</span>
+                            <span>{{ selectedRoad[0]?.properties?.gid }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold">Road Part ID</span>
+                            <span>{{ selectedRoad[0]?.properties?.road_part_id }}</span>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <div class="mt-5 border-t border-surface pt-4">
+
+                    <div class="text-lg font-semibold mb-4">
+                        Ограничения нагрузки на ось
+                    </div>
+
+                    <ng-container *ngIf="selectedRoad.length; else noAxleLoads">
+
+                        <div
+                            *ngFor="let axle of selectedRoad"
+                            class="border border-surface rounded-lg p-4 mb-3"
+                        >
+
+                            <div class="flex justify-between items-center mb-3">
+
+                                <span class="text-500">
+                                    Максимальная нагрузка
+                                </span>
+
+                                <span
+                                    class="font-bold text-lg"
+                                    [style.color]="axle.properties.statusColor"
+                                >
+                                    {{ axle.properties.os?.name }} т/ось
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Участок
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.start }} — {{ axle.properties.finish }}
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Длина участка
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.length }}
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between">
+
+                                <span class="text-500">
+                                    Road Part ID
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.road_part_id }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </ng-container>
+
+                    <ng-template #noAxleLoads>
+
+                        <div class="text-500">
+                            Ограничения отсутствуют.
+                        </div>
+
+                    </ng-template>
+
+                </div>
+            </ng-container>
+
+            <ng-template #roadNotFound>
+
+                <div class="text-center text-500 py-6">
+                    Нет данных
+                </div>
+
+            </ng-template>
+        </div>
+
+
+
+    </p-drawer>
+
+    <p-drawer
+        [(visible)]="isVisibleSettings"
+        modal="false"
+        styleClass="border-none p-drawer-bottom-settings"
+        position="bottom"
+    >
+        <ng-template #header>
+            <div class="flex align-items-center justify-content-between mb-0">
+                <span class="text-900 text-xl font-semibold">Настройки</span>
+            </div>
+        </ng-template>
+
+        <div class="col-span-12 lg:col-span-12 h-full">
+
+            <div>
+                <div class="grid grid-cols-12 gap-4">
+
+                    <div class="col-span-12 flex flex-row items-center gap-2">
+                        <p-toggleswitch
+                            [(ngModel)]="layers.active"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="layerStateService.update({ active: $event })"
+                            inputId="layer-routes"
+                        />
+
+                        <label for="layer-routes">
+                            Активный маршрут
+                        </label>
+                    </div>
+
+                    <div class="col-span-12 flex flex-row items-center gap-2">
+                        <p-toggleswitch
+                            [(ngModel)]="layers.alternative"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="layerStateService.update({ alternative: $event })"
+                            inputId="layer-routes"
+                        />
+
+                        <label for="layer-routes">
+                            Алтернативный маршрут (ы)
+                        </label>
+                    </div>
+
+                    <div class="col-span-12 flex flex-row items-center gap-2">
+                        <!-- <p-toggleswitch
+                            [(ngModel)]="layers.intersections"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="layerStateService.update({ intersections: $event })"
+                            inputId="layer-raw"
+                        />
+
+                        <label for="layer-raw">
+                            Пересечения с маршрутом
+                        </label> -->
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+    </p-drawer>
+
+
+
+</div>

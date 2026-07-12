@@ -1,0 +1,56 @@
+<div class="layout-content">
+    <div class="layout-content-inner">
+        <p-progressbar
+            *ngIf="showProgress"
+            styleClass="map-dialog_progress"
+            [style]="{'height': '4px'}"
+            mode="indeterminate"
+        />
+        <div
+            class="layout-map-container"
+            [class.layout-map-stack]="
+        mapLayoutMode() === 'stack'
+        && isMapSidebar()
+    "
+        >
+            <button
+                *ngIf="
+        isSidebarButton &&
+        mapLayoutMode() !== 'stack'
+    "
+                class="map-config-button p-link"
+                [ngClass]="{
+            'ml-0!': !isMapSidebar(),
+            'ml-[33rem]! max-[991px]:hidden': isMapSidebar()
+          }"
+                (click)="toggleSideBar()"
+                type="button"
+            >
+                <i
+                    class="pi"
+                    [ngClass]="{
+              'pi-angle-right': !isMapSidebar(),
+              'pi-angle-left': isMapSidebar()
+            }"
+                >
+                </i>
+            </button>
+            <div
+                class="layout-map-sidebar transition-all duration-100 ease-[cubic-bezier(0,0,0.2,1)]"
+                style="position: absolute;"
+            >
+
+                <app-map-directions></app-map-directions>
+
+            </div>
+            <div
+                class="layout-map-content-wrapper"
+                style="position: relative;"
+            >
+                <div class="layout-map-content">
+                    <app-map></app-map>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

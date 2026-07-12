@@ -1,0 +1,32 @@
+<p-inputgroup>
+
+    <input
+        pInputText
+        [ngModel]="value"
+        (ngModelChange)="onInputChange($event)"
+        placeholder="Точка установки (широта, долгота)"
+    />
+
+    <p-inputgroup-addon *ngIf="value">
+
+        <p-button
+            icon="pi pi-copy"
+            [text]="true"
+            severity="secondary"
+            (click)="copyCoordinates()"
+        />
+
+    </p-inputgroup-addon>
+
+    <p-inputgroup-addon *ngIf="value">
+
+        <p-button
+            icon="pi pi-times"
+            [text]="true"
+            severity="secondary"
+            (click)="onClear()"
+        />
+
+    </p-inputgroup-addon>
+
+</p-inputgroup>

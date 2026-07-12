@@ -1,0 +1,40 @@
+<p-card
+  header=""
+  styleClass="card-legend p-2!"
+>
+  <div class="
+      flex
+      flex-col
+      sm:flex-row
+      gap-2
+      sm:gap-4
+      text-xs
+      sm:text-sm
+    ">
+
+    <div
+      *ngFor="let layer of baseLayers"
+      class="
+        flex
+        items-center
+        gap-2
+        whitespace-nowrap
+      "
+    >
+
+      <p-radiobutton
+        [inputId]="layer.key"
+        name="baseLayer"
+        [value]="layer.key"
+        [(ngModel)]="selectedBaseLayer"
+        (ngModelChange)="onBaseLayerChange($event)"
+      />
+
+      <label [for]="layer.key">
+        {{ layer.name }}
+      </label>
+
+    </div>
+
+  </div>
+</p-card>

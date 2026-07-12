@@ -1,0 +1,100 @@
+import type { OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
+import { Directive, EventEmitter, inject, Input, NgZone, Output } from '@angular/core';
+import type {
+  YMapDefaultMarker,
+  YMapDefaultMarkerProps,
+} from '@yandex/ymaps3-types/packages/markers';
+import { YMapComponent, YReadyEvent } from 'angular-yandex-maps-v3';
+import { from, Subject, takeUntil, tap } from 'rxjs';
+import { filter, switchMap } from 'rxjs/operators';
+
+
+/**
+ * This component wraps the [ymaps3.YMapDefaultMarker](https://yandex.com/maps-api/docs/js-api/object/markers/YMapDefaultMarker.html) class from the Yandex.Maps API.
+ * All component inputs are named the same as the API class constructor arguments.
+ * This component is from the `@yandex/ymaps3-markers@0.0.1` package, which is asynchronously loaded when you use this component.
+ *
+ * ```html
+ * <y-map
+ *   [props]="{
+ *     location: {
+ *       center: [-0.127696, 51.507351],
+ *       zoom: 10,
+ *     },
+ *   }"
+ * >
+ *   <y-map-default-scheme-layer />
+ *   <y-map-default-features-layer />
+ *
+ *   <y-map-default-marker
+ *     [props]="{
+ *       coordinates: [-0.127696, 51.507351],
+ *       title: 'Hello World!',
+ *       subtitle: 'kind and bright',
+ *       color: 'blue',
+ *     }"
+ *   />
+ * </y-map>
+ * ```
+ */
+@Directive({
+  selector: 'y-map-default-marker',
+})
+export class YMapDefaultMarkerDirective implements OnInit, OnDestroy, OnChanges {
+  private readonly ngZone = inject(NgZone);
+  private readonly yMapComponent = inject(YMapComponent);
+
+  private readonly destroy$ = new Subject<void>();
+
+  private marker?: YMapDefaultMarker;
+
+  /**
+   * See the API entity documentation for detailed information. Supports ngOnChanges.
+   * {@link https://yandex.com/maps-api/docs/js-api/object/markers/YMapDefaultMarker.html#props}
+   */
+  @Input({ required: true }) props!: YMapDefaultMarkerProps;
+
+  /**
+   * The entity instance is created. This event runs outside an Angular zone.
+   */
+  @Output() ready: EventEmitter<YReadyEvent<YMapDefaultMarker>> = new EventEmitter<
+    YReadyEvent<YMapDefaultMarker>
+  >();
+
+  ngOnInit() {
+    this.yMapComponent.map$
+      .pipe(
+        filter(Boolean),
+        switchMap((map) =>
+          // It's safe to call it each time, the Yandex.Maps API handles multiple requests under the hood.
+          from(ymaps3.import('@yandex/ymaps3-markers@0.0.1')).pipe(
+            tap(({ YMapDefaultMarker }) => {
+              this.marker = new YMapDefaultMarker(this.props);
+              map.addChild(this.marker);
+              this.ready.emit({ ymaps3, entity: this.marker });
+            }),
+          ),
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // It must be run outside a zone; otherwise, all async events within this call will cause ticks.
+    this.ngZone.runOutsideAngular(() => {
+      if (this.marker) {
+        this.marker.update(changes['props'].currentValue);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.marker) {
+      this.yMapComponent.map$.value?.removeChild(this.marker);
+    }
+
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}

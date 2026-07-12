@@ -1,0 +1,277 @@
+<div
+  class="c-map"
+  #mapContainer
+>
+
+  <div class="c-map-toolbar-horizontal">
+    <map-legend-control></map-legend-control>
+    <div class="flex-fill"></div>
+    <map-layer-control></map-layer-control>
+  </div>
+
+  <div class="c-map-toolbar-vertical">
+    <div class="flex-fill"></div>
+    <div class="c-map__y-offset"></div>
+    <map-zoom-control *ngIf="isLargeScreen"></map-zoom-control>
+
+    <div class="flex-fill"></div>
+
+  </div>
+  <div class="c-map-toolbar-horizontal c-map-toolbar-horizontal__bottom">
+    <div class="flex-fill"></div>
+
+  </div>
+  <ng-container *ngIf="!isMapLoad">
+    <p-skeleton
+      width="100%"
+      height="100%"
+    />
+  </ng-container>
+  <y-map
+    [props]="{
+    location: {
+      center: [37.617698, 55.755864],
+      zoom: 4
+    },
+    theme: theme(),
+    zoomRange: zoomRange(),
+    margin: [0,0,0,0]
+  }"
+    (ready)="onMapReady($event)"
+  >
+
+
+    <y-map-listener [props]="{
+       onClick: onMapClick,
+      }" />
+
+    <y-map-default-scheme-layer *ngIf="basemap() === 'scheme'"></y-map-default-scheme-layer>
+    <ng-container *ngIf="basemap() === 'hybrid'">
+      <y-map-satellite [props]="{ zIndex: 0 }"></y-map-satellite>
+      <y-map-default-scheme-layer [props]="schemeProps"></y-map-default-scheme-layer>
+    </ng-container>
+
+    <y-map-default-features-layer [props]="{ zIndex: 2021 }" />
+
+    <!-- <y-map-tile-data-source [props]="roadSourceProps">
+      <y-map-layer [props]="roadLayerProps"></y-map-layer>
+    </y-map-tile-data-source> -->
+
+
+    <y-map-feature-data-source [props]="{ id: 'active-directions' }" />
+
+    <y-map-layer [props]="{
+        source: 'active-directions',
+        type: 'features',
+        zIndex: 1800
+    }" />
+
+    <y-map-feature-data-source [props]="{ id: 'directions' }" />
+
+    <y-map-layer [props]="{
+        source: 'directions',
+        type: 'features',
+        zIndex: 1400
+    }" />
+
+    <ng-container *ngIf="layers.alternative">
+      <ng-container *ngFor="
+        let feature of directionFeatures;
+        trackBy: trackById
+    ">
+
+        <y-map-feature [props]="{
+            source: 'directions',
+            id: feature.id,
+            geometry: feature.geometry,
+            properties: feature.properties,
+            style: feature.style
+        }" />
+
+      </ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="layers.active">
+      <ng-container *ngFor="
+        let feature of activeDirectionFeatures;
+        trackBy: trackById
+    ">
+        <y-map-feature [props]="{
+            source: 'active-directions',
+            id: feature.id,
+            geometry: feature.geometry,
+            properties: feature.properties,
+            style: feature.style
+        }" />
+      </ng-container>
+    </ng-container>
+
+
+    <y-map-mouse></y-map-mouse>
+
+
+    <y-map-feature-data-source [props]="{ id: 'direction-markers' }" />
+
+    <y-map-layer [props]="{
+        source: 'direction-markers',
+        type: 'features',
+        zIndex: 1500
+    }" />
+
+    <ng-container *ngFor="let feature of directionMarkerFeatures; trackBy: trackById">
+
+      <y-map-feature [props]="feature" />
+
+    </ng-container>
+
+    <y-map-feature-data-source [props]="{ id: 'rgis-roads-source' }" />
+
+
+    <y-map-layer [props]="{
+    source: 'rgis-roads-source',
+    type: 'features',
+    zIndex: 1400 
+}" />
+
+    <ng-container *ngIf="layers.intersections">
+      <ng-container *ngFor="let road of rgisRoadFeatures(); trackBy: trackById">
+        <y-map-feature [props]="{
+        source: 'rgis-roads-source',
+        id: 'rgis-' + road.id,
+        geometry: road.geometry,
+        properties: road.properties,
+        style: {
+            stroke: [
+                {
+                    color: '#FF3333',
+                    width: 4,
+                    opacity: 0.9
+                }
+            ]
+        }
+    }" />
+      </ng-container>
+    </ng-container>
+
+    <y-map-feature-data-source [props]="{ id: 'skdf-axle-source' }" />
+    <y-map-layer [props]="{ source: 'skdf-axle-source', type: 'features', zIndex: 1400 }" />
+
+    <y-map-feature-data-source [props]="{ id: 'skdf-axle-raw-source' }" />
+    <y-map-layer [props]="{ source: 'skdf-axle-raw-source', type: 'features', zIndex: 1800 }" />
+
+
+    <y-map-feature-data-source [props]="{ id: 'road-selection-source' }" />
+    <y-map-layer [props]="{
+    source: 'road-selection-source',
+    type: 'features',
+    zIndex: 1800 
+}" />
+
+
+    <y-map-feature-data-source [props]="{ id: 'road-selection-source-axle' }" />
+    <y-map-layer [props]="{
+    source: 'road-selection-source-axle',
+    type: 'features',
+    zIndex: 1800 
+}" />
+
+
+
+    <ng-container *ngFor="let axleFeature of roadSelectionFeatures(); trackBy: trackById">
+      <y-map-feature [props]="{
+            source: 'road-selection-source-axle',
+            id: axleFeature.id,
+            geometry: axleFeature.geometry,
+            properties: axleFeature.properties,
+            style: {
+                stroke: [{
+                    color: axleFeature.properties.statusColor,
+                    width: 8,
+                    opacity: 0.9
+                }]
+            }
+        }" />
+    </ng-container>
+
+
+    <ng-container *ngIf="layers.axle">
+      <ng-container *ngFor="let feature of axleLoadFeatures(); trackBy: trackById">
+        <y-map-feature [props]="{
+    source: 'road-selection-source-axle',
+    id: feature.id || feature.properties?.id,
+    geometry: feature.geometry,
+    properties: getFeatureProperties(feature),
+    style: {
+        stroke: [{
+            color: feature.properties?.strokeColor || '#191a1a',
+            width: feature.properties?.strokeWidth || 8,
+            opacity: feature.properties?.strokeOpacity || 0.9
+        }]
+    }
+  }" />
+      </ng-container>
+    </ng-container>
+
+
+    @if (stepMarkerFeature) {
+
+    <y-map-marker [props]="{ 
+    coordinates: stepMarkerFeature.geometry.coordinates,
+     zIndex: 3000,
+  }">
+      <div class="route-hover-marker"></div>
+    </y-map-marker>
+    }
+
+
+    <y-map-hint [props]="{ hint: onHint }">
+      <ng-template let-context>
+        <div class="ym-hint">
+          <div class="ym-hint__header">
+            <span
+              class="ym-hint__dot"
+              [style.background]="context?.hint?.color"
+            ></span>
+            <span class="ym-hint__road-name">{{ context?.hint?.title }}</span>
+          </div>
+
+          <!-- Основные характеристики дороги -->
+          <div class="ym-hint__body">
+            <div
+              class="ym-hint__row"
+              *ngIf="context?.hint?.roadValue"
+            >
+              <span class="ym-hint__value">{{ context?.hint?.roadValue }}</span>
+            </div>
+
+            <div
+              class="ym-hint__row"
+              *ngIf="context?.hint?.roadId"
+            >
+              <span class="ym-hint__label">ID дороги / Участка:</span>
+              <span class="ym-hint__value">#{{ context?.hint?.roadId }} / {{ context?.hint?.roadPartId }}</span>
+            </div>
+
+            <div
+              class="ym-hint__row"
+              *ngIf="context?.hint?.roadLength"
+            >
+              <span class="ym-hint__label">Протяженность:</span>
+              <span class="ym-hint__value">{{ context?.hint?.roadLength }} км</span>
+            </div>
+
+            <div
+              class="ym-hint__row"
+              *ngIf="context?.hint?.startKm"
+            >
+              <span class="ym-hint__label">Начальный</span>
+              <span class="ym-hint__value">км {{ context?.hint?.startKm }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </y-map-hint>
+
+  </y-map>
+
+</div>

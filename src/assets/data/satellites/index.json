@@ -1,0 +1,1430 @@
+[
+    {
+        "id": "y300k_compose.kml-bdfc83",
+        "name": "Y300К_compose.kml",
+        "file": "y300k_compose.kml-bdfc83.geojson",
+        "count": 1,
+        "sat": "y300k",
+        "beam": null,
+        "bbox": [
+            -179.8223964373342,
+            40.09861894012628,
+            179.3268923121206,
+            76.349335246171
+        ]
+    },
+    {
+        "id": "y401_compose.kml-9856f9",
+        "name": "Y401_compose.kml",
+        "file": "y401_compose.kml-9856f9.geojson",
+        "count": 1,
+        "sat": "y401",
+        "beam": null,
+        "bbox": [
+            21.06249378646109,
+            38.44,
+            158.5358660407042,
+            76.25861114280525
+        ]
+    },
+    {
+        "id": "y402_compose.kml-129ba3",
+        "name": "Y402_compose.kml",
+        "file": "y402_compose.kml-129ba3.geojson",
+        "count": 1,
+        "sat": "y402",
+        "beam": null,
+        "bbox": [
+            15.92398307141467,
+            39.3315,
+            122.9789236565631,
+            76.17379135326047
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam1-091a_rhcp-_120cm_esno.kml-d5b91f",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam1(091A_RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam1-091a_rhcp-_120cm_esno.kml-d5b91f.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 1,
+        "bbox": [
+            27.01412766761485,
+            56.3082685517422,
+            38.15724779940745,
+            73.70183240934614
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam10-010a-lhcp-_120cm_esno.kml-b92cdf",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam10(010A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam10-010a-lhcp-_120cm_esno.kml-b92cdf.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 10,
+        "bbox": [
+            42.12947470579411,
+            48.81703403357355,
+            50.83123301060942,
+            58.73357116443311
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam11-011a-rhcp-_120cm_esno.kml-b462cc",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam11(011A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam11-011a-rhcp-_120cm_esno.kml-b462cc.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 11,
+        "bbox": [
+            47.67111179403832,
+            48.6839074773198,
+            56.46706282434311,
+            57.98231641230206
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam12-012a-lhcp-_120cm_esno.kml-874e07",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam12(012A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam12-012a-lhcp-_120cm_esno.kml-874e07.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 12,
+        "bbox": [
+            53.04478134420779,
+            49.13910074377631,
+            63.89907119033988,
+            59.37533201900756
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam13-013a-rhcp-_120cm_esno.kml-77af52",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam13(013A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam13-013a-rhcp-_120cm_esno.kml-77af52.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 13,
+        "bbox": [
+            34.76565815377661,
+            44.96100139249617,
+            41.54164070542825,
+            53.95868291599557
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam14-014a-lhcp-_120cm_esno.kml-9e9d0d",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam14(014A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam14-014a-lhcp-_120cm_esno.kml-9e9d0d.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 14,
+        "bbox": [
+            39.06440412011433,
+            44.36537581219776,
+            46.58760197335403,
+            52.94404725545456
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam15-015a-rhcp-_120cm_esno.kml-bbbdd7",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam15(015A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam15-015a-rhcp-_120cm_esno.kml-bbbdd7.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 15,
+        "bbox": [
+            43.4709339929886,
+            43.58890787484143,
+            50.57757132400781,
+            52.11151529080452
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam16-016a-lhcp-_120cm_esno.kml-88b131",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam16(016A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam16-016a-lhcp-_120cm_esno.kml-88b131.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 16,
+        "bbox": [
+            35.83296545800871,
+            41.61662571914914,
+            42.00574024163535,
+            47.91688475689762
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam17-017a-rhcp-_120cm_esno.kml-1e58d2",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam17(017A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam17-017a-rhcp-_120cm_esno.kml-1e58d2.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 17,
+        "bbox": [
+            40.35488465291742,
+            40.95645684770593,
+            47.61359007158337,
+            47.44242257576121
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam18-018a-lhcp-_120cm_esno.kml-49ec0b",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam18(018A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam18-018a-lhcp-_120cm_esno.kml-49ec0b.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 18,
+        "bbox": [
+            44.3157017367504,
+            40.24000613305528,
+            50.77902102132955,
+            46.78418862335221
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam2-092a_lhcp-_120cm_esno.kml-a42daf",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam2(092A_LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam2-092a_lhcp-_120cm_esno.kml-a42daf.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 2,
+        "bbox": [
+            34.34190366309809,
+            55.04979581386046,
+            45.19528244344129,
+            68.66656534682856
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam3-093a-rhcp-_120cm_esno.kml-05e876",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam3(093A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam3-093a-rhcp-_120cm_esno.kml-05e876.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 3,
+        "bbox": [
+            42.07857164075192,
+            54.40583994245642,
+            52.87238645228639,
+            67.78061752104253
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam4-094a-lhcp-_120cm_esno.kml-64ba45",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam4(094A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam4-094a-lhcp-_120cm_esno.kml-64ba45.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 4,
+        "bbox": [
+            47.40487003573026,
+            53.31269131340561,
+            60.67148900957168,
+            66.43404433878531
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam5-095a-rhcp-_120cm_esno.kml-26abb8",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam5(095A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam5-095a-rhcp-_120cm_esno.kml-26abb8.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 5,
+        "bbox": [
+            53.13329825610508,
+            52.87196561710688,
+            68.20274810754259,
+            65.37416588470685
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam6-096a-lhcp-_120cm_esno.kml-73f653",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam6(096A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam6-096a-lhcp-_120cm_esno.kml-73f653.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 6,
+        "bbox": [
+            59.35696828389857,
+            52.09634126558436,
+            77.95068974655517,
+            65.1378014146607
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam7-097a-rhcp-_120cm_esno.kml-a62118",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam7(097A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam7-097a-rhcp-_120cm_esno.kml-a62118.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 7,
+        "bbox": [
+            26.3284678912849,
+            51.24283293452718,
+            34.36260732153863,
+            63.3551089195752
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam8-098a-lhcp-_120cm_esno.kml-0046bb",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam8(098A LHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam8-098a-lhcp-_120cm_esno.kml-0046bb.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 8,
+        "bbox": [
+            32.13322031685748,
+            50.55009538869951,
+            40.31951798388795,
+            61.16921152898549
+        ]
+    },
+    {
+        "id": "amu-1_120-cm-fwd-esno_beam9-099a-rhcp-_120cm_esno.kml-ac3fc5",
+        "name": "АМУ-1 / 120 cm FWD EsNo / Beam9(099A RHCP)_120cm_EsNo.kml",
+        "file": "amu-1_120-cm-fwd-esno_beam9-099a-rhcp-_120cm_esno.kml-ac3fc5.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 9,
+        "bbox": [
+            36.96142484259947,
+            49.56458227550716,
+            45.06816736477304,
+            59.84551487112719
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam1-091a_rhcp-_76cm_esno.kml-244452",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam1(091A_RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam1-091a_rhcp-_76cm_esno.kml-244452.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 1,
+        "bbox": [
+            27.12877889933713,
+            56.37939211142747,
+            38.1042759402149,
+            73.56221534530673
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam10-010a-lhcp-_76cm_esno.kml-32d849",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam10(010A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam10-010a-lhcp-_76cm_esno.kml-32d849.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 10,
+        "bbox": [
+            42.15321143690528,
+            48.78709752478482,
+            50.80961034571585,
+            58.71714472125382
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam11-011a-rhcp-_76cm_esno.kml-c1bd6e",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam11(011A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam11-011a-rhcp-_76cm_esno.kml-c1bd6e.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 11,
+        "bbox": [
+            47.66101519726439,
+            48.71252795934572,
+            56.43116168653695,
+            57.96821732653187
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam12-012a-lhcp-_76cm_esno.kml-8111c5",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam12(012A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam12-012a-lhcp-_76cm_esno.kml-8111c5.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 12,
+        "bbox": [
+            53.07353843101804,
+            49.18117554959997,
+            63.90854845655055,
+            59.37109127867958
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam13-013a-rhcp-_76cm_esno.kml-8d316d",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam13(013A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam13-013a-rhcp-_76cm_esno.kml-8d316d.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 13,
+        "bbox": [
+            34.78833371461233,
+            44.96259172158992,
+            41.44758106893114,
+            53.89653509880482
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam14-014a-lhcp-_76cm_esno.kml-a219b6",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam14(014A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam14-014a-lhcp-_76cm_esno.kml-a219b6.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 14,
+        "bbox": [
+            39.14228291609025,
+            44.39373769820365,
+            46.60587537976947,
+            52.91598534993918
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam15-015a-rhcp-_76cm_esno.kml-7558dd",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam15(015A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam15-015a-rhcp-_76cm_esno.kml-7558dd.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 15,
+        "bbox": [
+            43.49433951584361,
+            43.58330927104917,
+            50.54976004302636,
+            52.07695344848232
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam16-016a-lhcp-_76cm_esno.kml-07c635",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam16(016A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam16-016a-lhcp-_76cm_esno.kml-07c635.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 16,
+        "bbox": [
+            35.84395731277193,
+            41.63690497338898,
+            42.01020008709573,
+            47.89226723366108
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam17-017a-rhcp-_76cm_esno.kml-cf1dee",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam17(017A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam17-017a-rhcp-_76cm_esno.kml-cf1dee.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 17,
+        "bbox": [
+            40.3754023121453,
+            40.97866090660148,
+            47.58515355518502,
+            47.43078952001329
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam18-018a-lhcp-_76cm_esno.kml-74eb7b",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam18(018A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam18-018a-lhcp-_76cm_esno.kml-74eb7b.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 18,
+        "bbox": [
+            44.35863943667692,
+            40.24261208223921,
+            50.76955900733261,
+            46.78498668261689
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam2-092a_lhcp-_76cm_esno.kml-970547",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam2(092A_LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam2-092a_lhcp-_76cm_esno.kml-970547.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 2,
+        "bbox": [
+            34.375973752919,
+            55.11501583577764,
+            45.15559537660995,
+            68.64906056653507
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam3-093a-rhcp-_76cm_esno.kml-bb26fd",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam3(093A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam3-093a-rhcp-_76cm_esno.kml-bb26fd.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 3,
+        "bbox": [
+            42.15472806085954,
+            54.45076937005553,
+            52.78356533872149,
+            67.7755446367029
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam4-094a-lhcp-_76cm_esno.kml-0500a7",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam4(094A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam4-094a-lhcp-_76cm_esno.kml-0500a7.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 4,
+        "bbox": [
+            47.42603090029265,
+            53.36804046915457,
+            60.58330504957858,
+            66.36870442411367
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam5-095a-rhcp-_76cm_esno.kml-39854f",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam5(095A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam5-095a-rhcp-_76cm_esno.kml-39854f.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 5,
+        "bbox": [
+            53.22828029641918,
+            52.95724913415956,
+            68.15980522661727,
+            65.3453363658918
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam6-096a-lhcp-_76cm_esno.kml-b404f7",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam6(096A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam6-096a-lhcp-_76cm_esno.kml-b404f7.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 6,
+        "bbox": [
+            59.44395587575072,
+            52.11102823453064,
+            77.78457432984676,
+            65.08716766195136
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam7-097a-rhcp-_76cm_esno.kml-a26051",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam7(097A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam7-097a-rhcp-_76cm_esno.kml-a26051.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 7,
+        "bbox": [
+            26.39042235908501,
+            51.27568036834086,
+            34.29085818839072,
+            63.30040100748481
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam8-098a-lhcp-_76cm_esno.kml-6e9a78",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam8(098A LHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam8-098a-lhcp-_76cm_esno.kml-6e9a78.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 8,
+        "bbox": [
+            32.18470846638275,
+            50.5526446499106,
+            40.31295287990031,
+            61.10822727117718
+        ]
+    },
+    {
+        "id": "amu-1_76-cm-fwd-esno_beam9-099a-rhcp-_76cm_esno.kml-f7ade7",
+        "name": "АМУ-1 / 76 cm FWD EsNo / Beam9(099A RHCP)_76cm_EsNo.kml",
+        "file": "amu-1_76-cm-fwd-esno_beam9-099a-rhcp-_76cm_esno.kml-f7ade7.geojson",
+        "count": 3,
+        "sat": "amu-1",
+        "beam": 9,
+        "bbox": [
+            36.98840072202084,
+            49.62873682858621,
+            45.04104817819896,
+            59.84056117824265
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam1-091a_rhcp-_98cm_esno.kml-140497",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam1(091A_RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam1-091a_rhcp-_98cm_esno.kml-140497.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 1,
+        "bbox": [
+            26.83602310798066,
+            56.17479427868227,
+            38.2431204571356,
+            74.3723227298174
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam10-010a-lhcp-_98cm_esno.kml-d29b48",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam10(010A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam10-010a-lhcp-_98cm_esno.kml-d29b48.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 10,
+        "bbox": [
+            42.04962483211814,
+            48.65394522215012,
+            50.91621839419108,
+            58.91985736932989
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam11-011a-rhcp-_98cm_esno.kml-faac0f",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam11(011A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam11-011a-rhcp-_98cm_esno.kml-faac0f.geojson",
+        "count": 5,
+        "sat": "amu-1",
+        "beam": 11,
+        "bbox": [
+            47.56182249792765,
+            48.55735035295891,
+            56.60640052118977,
+            58.15080031995214
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam12-012a-lhcp-_98cm_esno.kml-5b767d",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam12(012A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam12-012a-lhcp-_98cm_esno.kml-5b767d.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 12,
+        "bbox": [
+            52.96128003031269,
+            49.01555479252062,
+            64.09798166895791,
+            59.55419074201354
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam13-013a-rhcp-_98cm_esno.kml-87a9b1",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam13(013A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam13-013a-rhcp-_98cm_esno.kml-87a9b1.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 13,
+        "bbox": [
+            34.66833985490993,
+            44.81884828708689,
+            41.55657669024922,
+            54.07506137570176
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam14-014a-lhcp-_98cm_esno.kml-aaa8d5",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam14(014A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam14-014a-lhcp-_98cm_esno.kml-aaa8d5.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 14,
+        "bbox": [
+            38.98528520480573,
+            44.25512705537074,
+            46.7021284721724,
+            53.12955382440458
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam15-015a-rhcp-_98cm_esno.kml-f596bc",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam15(015A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam15-015a-rhcp-_98cm_esno.kml-f596bc.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 15,
+        "bbox": [
+            43.39251580307827,
+            43.4858914846774,
+            50.74358279604516,
+            52.22723861857802
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam16-016a-lhcp-_98cm_esno.kml-8ed6ca",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam16(016A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam16-016a-lhcp-_98cm_esno.kml-8ed6ca.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 16,
+        "bbox": [
+            35.67802000933523,
+            41.5153329907437,
+            42.05739202731048,
+            47.98459755301948
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam17-017a-rhcp-_98cm_esno.kml-0c6609",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam17(017A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam17-017a-rhcp-_98cm_esno.kml-0c6609.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 17,
+        "bbox": [
+            40.25991011284214,
+            40.84367728345907,
+            47.64404204148399,
+            47.54253432418803
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam18_98cm_esno.kml-ace498",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam18_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam18_98cm_esno.kml-ace498.geojson",
+        "count": 5,
+        "sat": "amu-1",
+        "beam": 18,
+        "bbox": [
+            44.26633174260444,
+            40.15864345545209,
+            50.83786734626478,
+            46.85506521315152
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam2-092a_lhcp-_98cm_esno.kml-e205a4",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam2(092A_LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam2-092a_lhcp-_98cm_esno.kml-e205a4.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 2,
+        "bbox": [
+            34.22670582727938,
+            54.83346250846318,
+            45.29449617795469,
+            68.98194450778222
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam3-093a-rhcp-_98cm_esno.kml-6e3efc",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam3(093A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam3-093a-rhcp-_98cm_esno.kml-6e3efc.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 3,
+        "bbox": [
+            42.00366027389651,
+            54.31486008145451,
+            53.09733128746483,
+            68.04965517973608
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam4-094a-lhcp-_98cm_esno.kml-0a6e62",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam4(094A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam4-094a-lhcp-_98cm_esno.kml-0a6e62.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 4,
+        "bbox": [
+            47.29548049423275,
+            53.1951262170011,
+            60.96366213871735,
+            66.623063681272
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam5-095a-rhcp-_98cm_esno.kml-6ba59b",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam5(095A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam5-095a-rhcp-_98cm_esno.kml-6ba59b.geojson",
+        "count": 5,
+        "sat": "amu-1",
+        "beam": 5,
+        "bbox": [
+            53.00917580668644,
+            52.69881917034205,
+            68.47799446316156,
+            65.55158978947173
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam6-096a-lhcp-_98cm_esno.kml-21b922",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam6(096A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam6-096a-lhcp-_98cm_esno.kml-21b922.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 6,
+        "bbox": [
+            59.25131467281923,
+            51.96033151483034,
+            78.27764619415066,
+            65.34271864391262
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam7-097a-rhcp-_98cm_esno.kml-9aa693",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam7(097A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam7-097a-rhcp-_98cm_esno.kml-9aa693.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 7,
+        "bbox": [
+            26.16478817767145,
+            51.18207355633833,
+            34.43549733186266,
+            63.57957251996301
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam8-098a-lhcp-_98cm_esno.kml-289d3e",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam8(098A LHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam8-098a-lhcp-_98cm_esno.kml-289d3e.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 8,
+        "bbox": [
+            32.07177437013394,
+            50.44216598142469,
+            40.40989339087866,
+            61.35761549627292
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam9-099a-rhcp-_98cm_esno.kml-74ed64",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam9(099A RHCP)_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam9-099a-rhcp-_98cm_esno.kml-74ed64.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 9,
+        "bbox": [
+            36.86523915924249,
+            49.49345397887295,
+            45.16011460093053,
+            60.09020383321154
+        ]
+    },
+    {
+        "id": "amu-1_98-cm-fwd-esno_beam9-099a-rhcp-_98cm_esno.kml_beam8_98cm_esno.kml-c3c62f",
+        "name": "АМУ-1 / 98 cm FWD EsNo / Beam9(099A RHCP)_98cm_EsNo.kml / Beam8_98cm_EsNo.kml",
+        "file": "amu-1_98-cm-fwd-esno_beam9-099a-rhcp-_98cm_esno.kml_beam8_98cm_esno.kml-c3c62f.geojson",
+        "count": 4,
+        "sat": "amu-1",
+        "beam": 8,
+        "bbox": [
+            32.07177437013394,
+            50.44216598142469,
+            40.40989339087866,
+            61.35761549627292
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch01-urovni-eiim-803ff7",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч01(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch01-urovni-eiim-803ff7.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 1,
+        "bbox": [
+            35.022,
+            40.5945,
+            42.3692,
+            48.5624
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch02-urovni-eiim-513a31",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч02(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch02-urovni-eiim-513a31.geojson",
+        "count": 10,
+        "sat": "yamal-601",
+        "beam": 2,
+        "bbox": [
+            39.3902,
+            39.9365,
+            46.06680000000001,
+            47.3514
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch03-urovni-eiim-d513e3",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч03(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch03-urovni-eiim-d513e3.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 3,
+        "bbox": [
+            42.893,
+            39.269,
+            49.6561,
+            46.8414
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch04-urovni-eiim-b96fb6",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч04(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch04-urovni-eiim-b96fb6.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 4,
+        "bbox": [
+            36.6749,
+            43.5461,
+            44.4172,
+            52.1996
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch05-urovni-eiim-1913de",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч05(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch05-urovni-eiim-1913de.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 5,
+        "bbox": [
+            40.9774,
+            42.868,
+            48.4046,
+            51.3296
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch06-urovni-eiim-1cd878",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч06(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch06-urovni-eiim-1cd878.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 6,
+        "bbox": [
+            44.9849,
+            42.1761,
+            52.01400000000001,
+            50.2501
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch07-urovni-eiim-76b977",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч07(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch07-urovni-eiim-76b977.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 7,
+        "bbox": [
+            27.4234,
+            48.8871,
+            37.7744,
+            59.5523
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch08-urovni-eiim-ce9778",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч08(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch08-urovni-eiim-ce9778.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 8,
+        "bbox": [
+            33.4608,
+            47.884,
+            42.3762,
+            57.8256
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch09-urovni-eiim-979585",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч09(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch09-urovni-eiim-979585.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 9,
+        "bbox": [
+            38.5339,
+            47.0466,
+            46.8194,
+            56.6545
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch10-urovni-eiim-6cc287",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч10(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch10-urovni-eiim-6cc287.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 10,
+        "bbox": [
+            43.105,
+            46.0906,
+            51.0811,
+            55.44039999999999
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch11-urovni-eiim-e3a53c",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч11(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch11-urovni-eiim-e3a53c.geojson",
+        "count": 10,
+        "sat": "yamal-601",
+        "beam": 11,
+        "bbox": [
+            14.9726,
+            53.98609999999999,
+            34.01,
+            69.0504
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch12-urovni-eiim-1cddb8",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч12(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch12-urovni-eiim-1cddb8.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 12,
+        "bbox": [
+            26.9426,
+            52.56270000000001,
+            39.6206,
+            65.7668
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch13-urovni-eiim-e0f31d",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч13(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch13-urovni-eiim-e0f31d.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 13,
+        "bbox": [
+            34.3676,
+            51.72979999999999,
+            44.5694,
+            63.7672
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch14-urovni-eiim-189fdf",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч14(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch14-urovni-eiim-189fdf.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 14,
+        "bbox": [
+            40.2832,
+            50.48069999999999,
+            49.57489999999999,
+            62.0421
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch15-urovni-eiim-2fc517",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч15(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch15-urovni-eiim-2fc517.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 15,
+        "bbox": [
+            45.4243,
+            49.7962,
+            54.1733,
+            60.6813
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch16-urovni-eiim-986acc",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч16(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch16-urovni-eiim-986acc.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 16,
+        "bbox": [
+            49.9961,
+            48.9493,
+            58.948,
+            59.5397
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch17-urovni-eiim-c21448",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч17(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch17-urovni-eiim-c21448.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 17,
+        "bbox": [
+            54.3747,
+            48.2945,
+            63.3698,
+            58.45459999999999
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch18-urovni-eiim-aa536b",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч18(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch18-urovni-eiim-aa536b.geojson",
+        "count": 10,
+        "sat": "yamal-601",
+        "beam": 18,
+        "bbox": [
+            30.8948,
+            41.4432,
+            38.5606,
+            49.4099
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch19-urovni-eiim-99d869",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч19(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch19-urovni-eiim-99d869.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 19,
+        "bbox": [
+            9.12348,
+            57.1272,
+            41.7055,
+            79.4496
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch20-urovni-eiim-73a8b9",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч20(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch20-urovni-eiim-73a8b9.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 20,
+        "bbox": [
+            34.4692,
+            55.8549,
+            47.6208,
+            73.0545
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch21-urovni-eiim-ab674e",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч21(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch21-urovni-eiim-ab674e.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 21,
+        "bbox": [
+            42.5398,
+            54.9047,
+            53.44729999999999,
+            70.2488
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch22-urovni-eiim-1c2aa8",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч22(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch22-urovni-eiim-1c2aa8.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 22,
+        "bbox": [
+            48.39900000000001,
+            53.8138,
+            59.0073,
+            67.7011
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch23-urovni-eiim-03fc24",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч23(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch23-urovni-eiim-03fc24.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 23,
+        "bbox": [
+            53.5463,
+            53.1317,
+            65.0284,
+            66.7156
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch24-urovni-eiim-6230e6",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч24(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch24-urovni-eiim-6230e6.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 24,
+        "bbox": [
+            58.19239999999999,
+            52.06869999999999,
+            70.4715,
+            64.8742
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch25-urovni-eiim-866d90",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч25(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch25-urovni-eiim-866d90.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 25,
+        "bbox": [
+            63.0019,
+            51.5829,
+            76.4739,
+            63.9839
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch26-urovni-eiim-75a817",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч26(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch26-urovni-eiim-75a817.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 26,
+        "bbox": [
+            67.2654,
+            50.6082,
+            82.2361,
+            62.6619
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch27-urovni-eiim-7e4adc",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч27(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch27-urovni-eiim-7e4adc.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 27,
+        "bbox": [
+            71.8923,
+            50.3138,
+            90.839,
+            62.7283
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch28-urovni-eiim-16ea98",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч28(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch28-urovni-eiim-16ea98.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 28,
+        "bbox": [
+            76.2751,
+            49.5095,
+            96.83440000000002,
+            61.7069
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch29-urovni-eiim-cfb497",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч29(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch29-urovni-eiim-cfb497.geojson",
+        "count": 10,
+        "sat": "yamal-601",
+        "beam": 29,
+        "bbox": [
+            81.1711,
+            49.47729999999999,
+            114.871,
+            62.9574
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch30-urovni-eiim-6407ad",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч30(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch30-urovni-eiim-6407ad.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 30,
+        "bbox": [
+            86.0087,
+            48.71320000000001,
+            121.624,
+            62.3295
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch31-urovni-eiim-219faf",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч31(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch31-urovni-eiim-219faf.geojson",
+        "count": 10,
+        "sat": "yamal-601",
+        "beam": 31,
+        "bbox": [
+            91.7604,
+            48.9553,
+            123.129,
+            60.6229
+        ]
+    },
+    {
+        "id": "yamal-601.-luchi-ka-diapazona_luch32-urovni-eiim-c87b58",
+        "name": "Ямал-601. Лучи Ка-диапазона / Луч32(Уровни ЭИИМ)",
+        "file": "yamal-601.-luchi-ka-diapazona_luch32-urovni-eiim-c87b58.geojson",
+        "count": 11,
+        "sat": "yamal-601",
+        "beam": 32,
+        "bbox": [
+            4.9532,
+            51.2992,
+            25.6915,
+            64.6102
+        ]
+    },
+    {
+        "id": "Ekspress_103.kml-455a7b",
+        "name": "Ekspress_103.kml",
+        "file": "express103_ku_north_v001.geojson",
+        "count": 3,
+        "sat": "express-103",
+        "beam": null,
+        "bbox": [
+            17.35467632941294,
+            30.75901286621232,
+            174.83511190869,
+            81.299508670636
+        ]
+    },
+    {
+        "id": "AMU_7_ku.kml-aacd15",
+        "name": "AMU_7_ku.kml",
+        "file": "amu7_ku_v003.geojson",
+        "count": 2,
+        "sat": "amu-7",
+        "beam": null,
+        "bbox": [
+            45.14931357380794,
+            43.51580248172427,
+            180,
+            77.07754702440138
+        ]
+    },
+    {
+        "id": "am5_ka_beam01_v001",
+        "name": "AM5_Ka_beam01",
+        "file": "am5_ka_beam01_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 1,
+        "bbox": [
+            104.2659,
+            44.9864,
+            125.1681,
+            62.1883
+        ]
+    },
+    {
+        "id": "am5_ka_beam02_v001",
+        "name": "AM5_Ka_beam02",
+        "file": "am5_ka_beam02_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 2,
+        "bbox": [
+            67.9,
+            44.4377,
+            112.165,
+            64.9
+        ]
+    },
+    {
+        "id": "am5_ka_beam03_v001",
+        "name": "AM5_Ka_beam03",
+        "file": "am5_ka_beam03_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 3,
+        "bbox": [
+            129.0576,
+            42.6793,
+            142.2788,
+            57.8545
+        ]
+    },
+    {
+        "id": "am5_ka_beam04_v001",
+        "name": "AM5_Ka_beam04",
+        "file": "am5_ka_beam04_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 4,
+        "bbox": [
+            93.6,
+            44.1025,
+            119.1347,
+            61.64
+        ]
+    },
+    {
+        "id": "am5_ka_beam05_v001",
+        "name": "AM5_Ka_beam05",
+        "file": "am5_ka_beam05_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 5,
+        "bbox": [
+            65.35,
+            43.486,
+            105.8551,
+            61.43
+        ]
+    },
+    {
+        "id": "am5_ka_beam06_v001",
+        "name": "AM5_Ka_beam06",
+        "file": "am5_ka_beam06_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 6,
+        "bbox": [
+            119.8301,
+            43.7739,
+            134.8143,
+            59.7299
+        ]
+    },
+    {
+        "id": "am5_ka_beam07_v001",
+        "name": "AM5_Ka_beam07",
+        "file": "am5_ka_beam07_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 7,
+        "bbox": [
+            126.4765,
+            37.1274,
+            138.1578,
+            49.7965
+        ]
+    },
+    {
+        "id": "am5_ka_beam08_v001",
+        "name": "AM5_Ka_beam08",
+        "file": "am5_ka_beam08_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 8,
+        "bbox": [
+            137.4187,
+            42.0188,
+            150.3552,
+            56.8185
+        ]
+    },
+    {
+        "id": "am5_ka_beam09_v001",
+        "name": "AM5_Ka_beam09",
+        "file": "am5_ka_beam09_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 9,
+        "bbox": [
+            149.8334,
+            45.526,
+            168.61,
+            63.58
+        ]
+    },
+    {
+        "id": "am5_ka_beam10_v001",
+        "name": "AM5_Ka_beam10",
+        "file": "am5_ka_beam10_v001.geojson",
+        "count": 3,
+        "sat": "am5",
+        "beam": 10,
+        "bbox": [
+            106.12,
+            47.5824,
+            129.5545,
+            67.98
+        ]
+    }
+]

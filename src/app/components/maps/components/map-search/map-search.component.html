@@ -1,0 +1,16 @@
+<p-autocomplete
+    [(ngModel)]="value"
+    [suggestions]="suggestions$ | async"
+    field="label"
+    [forceSelection]="true"
+    minLength="3"
+    delay="500"
+    inputStyleClass="w-full pr-10 truncate"
+    styleClass="w-full"
+    [showClear]="true"
+    (completeMethod)="onSearch($event)"
+    (onSelect)="onSelect($event.value)"
+    [dropdown]="false"
+    placeholder="Поиск адреса / города"
+>
+</p-autocomplete>
