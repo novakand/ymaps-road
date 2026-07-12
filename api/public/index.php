@@ -86,6 +86,19 @@ try {
 
             break;
 
+
+        default:
+
+            http_response_code(404);
+
+            $result = [
+                'success' => false,
+                'message' => 'Route not found',
+                'path' => $path
+            ];
+
+            break;
+
     }
 
 } catch (Throwable $e) {
