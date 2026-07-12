@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./out-tsc/widget",
+        "skipLibCheck": true,
+        "types": []
+    },
+    "files": [
+        "src/widget/main.widget.ts"
+    ],
+    "include": [
+        "src/**/*.d.ts"
+    ]
+}
