@@ -41,8 +41,7 @@ $routeFilter = new RouteFilterService($geometry);
 $axleLoad = new AxleLoadService();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-$path = preg_replace('#^/api#', '', $path);
+$path = '/' . basename($path);
 
 $payload = json_decode(
     file_get_contents('php://input'),
