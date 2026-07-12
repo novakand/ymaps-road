@@ -42,7 +42,6 @@ $axleLoad = new AxleLoadService();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// если API будет размещен в /api
 $path = preg_replace('#^/api#', '', $path);
 
 $payload = json_decode(
