@@ -15,9 +15,6 @@ final readonly class RgisService
     ) {
     }
 
-    /**
-     * Получить дороги в пределах геобокса.
-     */
     public function getRoadGeobox(
         array $box,
         int $scaleFactor = 1,

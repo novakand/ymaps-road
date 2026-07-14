@@ -18,8 +18,7 @@ import { MapZoomControlComponent } from './components/map-zoom-control/map-zoom-
 import { MapFullscreenComponent } from './components/map-fullscreen/map-fullscreen.component';
 import { MapSettingsControlComponent } from './components/map-settings-control/map-settings-control.component';
 import { MapService } from './services/map-service';
-import { BehaviorSubject, catchError, debounceTime, delay, distinctUntilChanged, EMPTY, filter, map, of, Subject, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { BBox } from 'geojson';
+import { BehaviorSubject, catchError, combineLatest, concatMap, debounceTime, delay, distinctUntilChanged, EMPTY, filter, finalize, from, map, of, Subject, switchMap, takeUntil, tap, timeout, timer, withLatestFrom } from 'rxjs';
 import { MapEventManager } from './services/map-event-manager';
 import { YMapFeatureDirective } from './directives/y-map-feature.directive';
 import { YMapFeatureDataSourceDirective } from './directives/y-map-feature-data-source.directive';
@@ -29,11 +28,9 @@ import { YMapClustererDirective } from './directives/y-map-clusterer.directive';
 import { LayoutService } from '../../services/layout.service';
 import { YMapMouseDirective } from './directives/y-map-mouse.directive';
 import { MapSearchComponent } from './components/map-search/map-search.component';
-import { YMapDefaultMarkerDirective } from './directives/y-map-default-marker.directive';
 import { YMapMarkerDirective } from './directives/y-map-marker.directive';
 import { YMapHintDirective } from './directives/y-map-hint.directive';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
-import { MapSearchService } from './services/map-search.service';
 import { YMapSatelliteLayerDirective } from './directives/ymap-satelite-layer.directive';
 import { YMapTileDataSourceDirective } from './directives/y-map-tile-data-source.directive';
 import { DirectionStateService } from './components/map-directions/services/direction-state.service';
@@ -117,12 +114,15 @@ export class MapComponent {
 
     });
     public roadSelectionFeatures = signal<any[]>([]);
+    public roadBboxFeatures = signal<any[]>([]);
     private readonly _analyzeRoute$ = new Subject<{
         chunks: RouteChunk[];
         zoom: number;
     }>();
-    private readonly CHUNK_LENGTH_KM = 30;
-    private readonly CHUNK_PADDING_METERS = 600;
+    private readonly CHUNK_LENGTH_KM = 15;
+    private readonly CHUNK_PADDING_METERS = 300;
+    private readonly CHUNK_REQUEST_DELAY_MS = 300;
+    private readonly CHUNK_REQUEST_TIMEOUT_MS = 30000;
     private readonly online$ = this.layerStateService.layers$.pipe(
         map(layers => layers.axle),
         distinctUntilChanged()
@@ -159,23 +159,27 @@ export class MapComponent {
     private _eventManager: MapEventManager = new MapEventManager(inject(NgZone));
     private _bounds = this._eventManager.getLazyEmitter<{
         object: any;
-        event: { location: { bounds: any } };
+        event: {
+            location: {
+                bounds: any;
+            };
+        };
     }>('onUpdate');
     private zoom$ = new BehaviorSubject<number>(this.zoom());
-    private bounds$ = new BehaviorSubject<BBox | null>(null);
+    private bounds$ = new BehaviorSubject<any | null>(null);
     private _destroy$ = new Subject<boolean>();
     public layers = {
         intersections: true,
         active: true,
-        axle: true,
+        axle: false,
         alternative: true,
+        axleBbox: false,
     };
 
     constructor(
         public cdr: ChangeDetectorRef,
         private ngZone: NgZone,
         public mapService: MapService,
-        private _searchService: MapSearchService,
         public layoutService: LayoutService,
         private breakpointObserver: BreakpointObserver,
         private directionState: DirectionStateService,
@@ -283,6 +287,8 @@ export class MapComponent {
         this._watchAnalyzeRoute();
         this._watchFocusedStep();
         this._watchHoveredStep();
+        this._watchBboxChanges();
+        this._watchMapLocationChanges();
         this._watchDirectionPoints();
         this.cdr.markForCheck();
     }
@@ -308,13 +314,10 @@ export class MapComponent {
             }
 
             try {
-                // Cut the line into fixed-length segments
                 const chunks = lineChunk(
                     lineString(feature.geometry.coordinates),
                     chunkLengthKm,
-                    {
-                        units: 'kilometers'
-                    }
+                    { units: 'kilometers' }
                 );
 
                 for (const chunk of chunks.features) {
@@ -357,10 +360,7 @@ export class MapComponent {
                     };
 
                     result.push({
-                        bounds: this._convertToEPSG3857([
-                            [minX, minY],
-                            [maxX, maxY]
-                        ]),
+                        bounds: [minX, minY, maxX, maxY],
                         features: [enrichedFeature]
                     });
                 }
@@ -414,9 +414,9 @@ export class MapComponent {
 
                         return;
                     }
-
-                    this.roadSelectionState.setSelection(response);
-                    this.roadSelectionFeatures.set(response);
+                    const features = response?.features ?? [];
+                    this.roadSelectionState.setSelection(features);
+                    this.roadSelectionFeatures.set(features);
                 },
 
                 error: error => {
@@ -693,119 +693,277 @@ export class MapComponent {
             });
     }
 
-
-
     private _watchAnalyzeRoute(): void {
-
         this._analyzeRoute$
             .pipe(
-
                 switchMap(request =>
-
                     this.online$.pipe(
+                        switchMap(isEnabled => {
+                            if (
+                                !isEnabled ||
+                                request.chunks.length === 0
+                            ) {
+                                return EMPTY;
+                            }
 
-                        switchMap(isOnline => {
+                            const missingChunkIndexes =
+                                request.chunks
+                                    .map((_, index) => index)
+                                    .filter(index =>
+                                        !this.chunkFeatures().has(index)
+                                    );
 
-                            const source$ = isOnline
-                                ? timer(0, 15000)
-                                : timer(0);
+                            if (missingChunkIndexes.length === 0) {
+                                console.log(
+                                    'ROAD AXLE: all chunks already loaded',
+                                    {
+                                        chunks:
+                                            request.chunks.length,
+                                        cached:
+                                            this.chunkFeatures().size,
+                                    },
+                                );
 
-                            return source$.pipe(
+                                return EMPTY;
+                            }
 
-                                switchMap(() => {
+                            this._loadProgressService.show(999);
 
-                                    if (!request.chunks.length) {
+                            return from(missingChunkIndexes).pipe(
+                                concatMap(chunkIndex => {
+                                    const chunk = request.chunks[chunkIndex];
+
+                                    if (!chunk) {
                                         return EMPTY;
                                     }
 
-                                    const chunk =
-                                        request.chunks[this.currentChunkIndex];
+                                    return timer(this.CHUNK_REQUEST_DELAY_MS).pipe(
+                                        switchMap(() =>
+                                            this.geoService
+                                                .getRoadAxle(
+                                                    chunk.features,
+                                                    chunk.bounds,
+                                                    request.zoom,
+                                                    chunkIndex,
+                                                )
+                                                .pipe(
+                                                    timeout(
+                                                        this.CHUNK_REQUEST_TIMEOUT_MS,
+                                                    ),
 
-                                    return this.geoService
-                                        .getRoadAxle(
-                                            chunk.features,
-                                            chunk.bounds,
-                                            request.zoom
-                                        )
-                                        .pipe(
+                                                    map(response => ({
+                                                        response,
+                                                        chunkIndex,
+                                                    })),
 
-                                            map(response => ({
-                                                response,
-                                                request
-                                            })),
+                                                    catchError(error => {
+                                                        console.error(
+                                                            'ROAD AXLE ERROR',
+                                                            {
+                                                                chunkIndex,
+                                                                error,
+                                                            },
+                                                        );
 
-                                            catchError(error => {
+                                                        return of({
+                                                            response: {
+                                                                type: 'FeatureCollection',
+                                                                features: [],
+                                                            },
+                                                            chunkIndex,
+                                                        });
+                                                    }),
+                                                ),
+                                        ),
+                                    );
+                                }),
 
-                                                console.error(error);
+                                tap(({ response, chunkIndex }) => {
+                                    const features =
+                                        response?.features ?? [];
 
-                                                return of({
-                                                    response: null,
-                                                    request
-                                                });
+                                    const cache = new Map(
+                                        this.chunkFeatures(),
+                                    );
 
-                                            })
+                                    cache.set(
+                                        chunkIndex,
+                                        features,
+                                    );
 
-                                        );
+                                    this.chunkFeatures.set(cache);
 
-                                })
+                                    this.cdr.markForCheck();
+                                }),
 
+                                finalize(() => {
+                                    this._loadProgressService.hide(999);
+                                    this.cdr.markForCheck();
+                                }),
                             );
-
-                        })
-
-                    )
-
+                        }),
+                    ),
                 ),
 
-                takeUntil(this._destroy$)
-
+                takeUntil(this._destroy$),
             )
             .subscribe({
-
-                next: ({ response, request }) => {
+                error: error => {
+                    console.error(
+                        'ROAD AXLE STREAM ERROR',
+                        error,
+                    );
 
                     this._loadProgressService.hide(999);
+                    this.cdr.markForCheck();
+                },
+            });
+    }
 
-                    if (response) {
+    private _watchBboxChanges(): void {
+        combineLatest([
+            this.bounds$,
+            this.zoom$,
+            this.layerStateService.layers$,
+        ])
+            .pipe(
+                debounceTime(300),
 
-                        this.rgisRoadFeatures.set(
-                            response.roads
-                        );
+                map(([bounds, zoom, layers]) => ({
+                    bounds,
+                    zoom,
+                    enabled: Boolean(layers.axleBbox),
+                })),
 
+                distinctUntilChanged((previous, current) => (
+                    previous.zoom === current.zoom &&
+                    previous.enabled === current.enabled &&
+                    deepEquals(previous.bounds, current.bounds)
+                )),
 
+                tap(state => {
+                    if (
+                        !state.enabled ||
+                        !state.bounds ||
+                        state.zoom < 12
+                    ) {
+                        this.roadBboxFeatures.set([]);
+                        this._loadProgressService.hide(998);
+                        this.cdr.markForCheck();
+                    }
+                }),
 
-                        const cache = new Map(this.chunkFeatures());
-
-                        cache.set(
-                            this.currentChunkIndex,
-                            response.features || []
-                        );
-
-                        this.chunkFeatures.set(cache);
-
+                switchMap(state => {
+                    if (
+                        !state.enabled ||
+                        !state.bounds ||
+                        state.zoom < 11
+                    ) {
+                        return EMPTY;
                     }
 
-                    // Переходим к следующему чанку
-                    this.currentChunkIndex =
-                        (this.currentChunkIndex + 1) %
-                        request.chunks.length;
+                    const bounds4326 = this._flattenBounds(
+                        state.bounds,
+                    );
 
-                    this.cdr.markForCheck();
+                    this._loadProgressService.show(998);
 
-                },
+                    return this.geoService
+                        .getRoadBbox(
+                            bounds4326,
+                            null,
+                            Math.ceil(state.zoom),
+                        )
+                        .pipe(
+                            catchError(error => {
+                                console.error(
+                                    'ROAD BBOX LOAD ERROR',
+                                    error,
+                                );
 
-                error: err => {
+                                return of({
+                                    type: 'FeatureCollection',
+                                    features: [],
+                                });
+                            }),
 
-                    console.error(err);
+                            finalize(() => {
+                                this._loadProgressService.hide(
+                                    998,
+                                );
 
-                    this._loadProgressService.hide(999);
+                                this.cdr.markForCheck();
+                            }),
+                        );
+                }),
 
-                    this.cdr.markForCheck();
+                takeUntil(this._destroy$),
+            )
+            .subscribe(featureCollection => {
+                this.roadBboxFeatures.set(
+                    featureCollection?.features ?? [],
+                );
 
+                this.cdr.markForCheck();
+            });
+    }
+
+    private _watchMapLocationChanges(): void {
+        if (this.map?.bounds) {
+            this.bounds$.next(this.map.bounds);
+        }
+
+        if (Number.isFinite(this.map?.zoom)) {
+            this.zoom$.next(this.map.zoom);
+        }
+
+        this._bounds
+            .pipe(
+                takeUntil(this._destroy$),
+            )
+            .subscribe(update => {
+                const eventBounds =
+                    update?.event?.location?.bounds;
+
+                const currentBounds =
+                    eventBounds ??
+                    this.map?.bounds ??
+                    null;
+
+                const currentZoom =
+                    this.map?.zoom ?? null;
+
+                if (currentBounds) {
+                    this.bounds$.next(currentBounds);
                 }
 
+                if (
+                    typeof currentZoom === 'number' &&
+                    Number.isFinite(currentZoom)
+                ) {
+                    this.zoom$.next(currentZoom);
+                }
             });
+    }
 
+    private _flattenBounds(
+        bounds: [[number, number], [number, number]],
+    ): [number, number, number, number] {
+        const first = bounds[0];
+        const second = bounds[1];
+
+        const west = Math.min(first[0], second[0]);
+        const east = Math.max(first[0], second[0]);
+
+        const south = Math.min(first[1], second[1]);
+        const north = Math.max(first[1], second[1]);
+
+        return [
+            west,
+            south,
+            east,
+            north,
+        ];
     }
 
     public getZoomFromBBox(bbox) {
@@ -836,15 +994,12 @@ export class MapComponent {
 
 
     private simplifyRouteFeatures(features: any[]): any[] {
-
         return features.map(feature => {
-
             if (!feature || feature.geometry?.type !== 'LineString') {
                 return feature;
             }
 
             try {
-
                 const routeLengthKm = length(
                     feature.geometry,
                     { units: 'kilometers' }
@@ -892,15 +1047,9 @@ export class MapComponent {
     }
 
     private _watchDirections(): void {
-
         this.directionState.state$
             .pipe(
-                // filter(Boolean),
-
                 map(state => state.directions),
-
-                //  filter(Boolean),
-
                 distinctUntilChanged((a, b) => deepEquals(a, b)),
 
                 tap(route => {
@@ -912,11 +1061,7 @@ export class MapComponent {
 
                         this.directionFeatures = [];
                         this.activeDirectionFeatures = [];
-
-
                         this.chunkFeatures.set(new Map());
-                        //  this.roadSelectionFeatures.set([]);
-
                         this.cdr.markForCheck();
 
                         return;
@@ -987,11 +1132,8 @@ export class MapComponent {
                         ])
                     );
 
-                    this._loadProgressService.show(1);
 
                     this.currentChunkIndex = 0;
-
-                    // Очищаем кэш предыдущего маршрута
                     this.chunkFeatures.set(
                         new Map<number, any[]>()
                     );
@@ -1005,7 +1147,7 @@ export class MapComponent {
                         );
 
                     const zoom = this.getZoomFromBBox(activeBounds);
-                    const finalZoom = 14
+                    const finalZoom = 12
 
                     const chunks =
                         this.buildRouteChunks(
@@ -1026,28 +1168,6 @@ export class MapComponent {
             .subscribe({
                 error: err => console.error(err)
             });
-    }
-
-
-
-    private _convertToEPSG3857(bounds: [[number, number], [number, number]]): number[] {
-        const minLon = bounds[0][0];
-        const minLat = bounds[0][1];
-        const maxLon = bounds[1][0];
-        const maxLat = bounds[1][1];
-
-        const lonTo3857 = (lon: number) => (lon * 20037508.34) / 180;
-        const latTo3857 = (lat: number) => {
-            const y = Math.log(Math.tan(((90 + lat) * Math.PI) / 360)) / (Math.PI / 180);
-            return (y * 20037508.34) / 180;
-        };
-
-        return [
-            lonTo3857(minLon),
-            latTo3857(minLat),
-            lonTo3857(maxLon),
-            latTo3857(maxLat)
-        ];
     }
 
     private _watchBaseLayer(): void {
@@ -1118,12 +1238,10 @@ export class MapComponent {
             title: props.hintTitle,
             color: props.hintColor,
             coords: props.geometry?.coordinates || null,
-
-            // Пробрасываем данные в HTML контекст хинта
             roadId: props.roadId,
             roadPartId: props.roadPartId,
             roadLength: props.roadLength,
-            startKm: props.start_km || props.startKm, // Защита на случай разного нейминга
+            startKm: props.start_km || props.startKm,
             roadValue: props.roadValue
         };
     };

@@ -4,7 +4,8 @@ export const environment: IEnvironment = {
     debounceTime: 300,
     production: false,
     ssoUri: '',
-    apiUri: 'http://localhost:8001',
+    apiUri: '',
+    apiBaseUrl: 'https://bogatov-group.ru/ymaps/api',
     apiUriMapbox: '',
     accessTokenMapBox: '',
     baseURL: ''

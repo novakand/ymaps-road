@@ -6,9 +6,6 @@ namespace RouteGIS\Services;
 
 final class GeometryService
 {
-    /**
-     * Конвертирует GeoJSON Feature из EPSG:3857 в WGS84.
-     */
     public function convertFeature(array $feature): array
     {
         if (!isset($feature['geometry'])) {
@@ -59,22 +56,6 @@ final class GeometryService
         return $features;
     }
 
-
-    /**
-     * Аналог turf.nearestPointOnLine().
-     *
-     * Возвращает:
-     *  - distance — минимальное расстояние до маршрута (метры)
-     *  - location — расстояние вдоль маршрута (метры)
-     *
-     * @param array{0:float,1:float} $point
-     * @param array<array{0:float,1:float}> $routeCoordinates
-     *
-     * @return array{
-     *     distance: float,
-     *     location: float
-     * }
-     */
     private function nearestPointOnRoute(
         array $point,
         array $routeCoordinates,
@@ -120,12 +101,6 @@ final class GeometryService
     }
 
 
-    /**
-     * Длина сегмента в метрах.
-     *
-     * @param array{0:float,1:float} $start
-     * @param array{0:float,1:float} $end
-     */
     private function segmentLength(
         array $start,
         array $end,
@@ -143,11 +118,7 @@ final class GeometryService
 
         return hypot($dx, $dy);
     }
-    /**
-     * EPSG:3857 -> WGS84.
-     *
-     * @return array{0:float,1:float}
-     */
+
     public function convertPoint3857To4326(
         float $x,
         float $y,
@@ -169,13 +140,6 @@ final class GeometryService
         ];
     }
 
-    /**
-     * Разбивает MultiLineString на отдельные Feature.
-     *
-     * @param array $feature
-     *
-     * @return array
-     */
     public function explodeFeature(array $feature): array
     {
         $geometry = $feature['geometry'] ?? null;
@@ -212,22 +176,6 @@ final class GeometryService
         return $result;
     }
 
-    /**
-     * Проекция точки на сегмент.
-     *
-     * Возвращает:
-     *  - distance — расстояние до сегмента
-     *  - offset — положение проекции вдоль сегмента
-     *
-     * @param array{0:float,1:float} $point
-     * @param array{0:float,1:float} $start
-     * @param array{0:float,1:float} $end
-     *
-     * @return array{
-     *     distance: float,
-     *     offset: float
-     * }
-     */
     private function projectPointToSegment(
         array $point,
         array $start,
@@ -295,17 +243,6 @@ final class GeometryService
         ];
     }
 
-
-    /**
-     * Аналог turf.lineSliceAlong().
-     *
-     * Вырезает участок маршрута между двумя
-     * расстояниями вдоль линии.
-     *
-     * @param array<array{0:float,1:float}> $routeCoordinates
-     *
-     * @return array<array{0:float,1:float}>
-     */
     private function sliceRoute(
         array $routeCoordinates,
         float $startLocation,
@@ -335,7 +272,6 @@ final class GeometryService
             $segmentStart = $location;
             $segmentEnd = $location + $segmentLength;
 
-            // сегмент полностью до нужного участка
             if ($segmentEnd < $startLocation) {
 
                 $location += $segmentLength;
@@ -343,12 +279,10 @@ final class GeometryService
                 continue;
             }
 
-            // сегмент полностью после участка
             if ($segmentStart > $endLocation) {
                 break;
             }
 
-            // начало
             if (empty($result)) {
 
                 if ($startLocation > $segmentStart) {
@@ -369,7 +303,6 @@ final class GeometryService
                 }
             }
 
-            // конец
             if ($segmentEnd >= $endLocation) {
 
                 $t =
@@ -394,14 +327,6 @@ final class GeometryService
     }
 
 
-    /**
-     * Интерполяция точки на сегменте.
-     *
-     * @param array{0:float,1:float} $start
-     * @param array{0:float,1:float} $end
-     *
-     * @return array{0:float,1:float}
-     */
     private function interpolate(
         array $start,
         array $end,
@@ -415,17 +340,6 @@ final class GeometryService
     }
 
 
-    /**
-     * Проецирует дорогу РГИС на маршрут Яндекса.
-     *
-     * Возвращает геометрию маршрута Яндекса,
-     * соответствующую данной дороге.
-     *
-     * @param array $roadGeometry
-     * @param array<array{0:float,1:float}> $routeCoordinates
-     *
-     * @return array|null
-     */
     public function colorizeRoute(
         array $roadGeometry,
         array $routeFeatures,
@@ -456,8 +370,8 @@ final class GeometryService
             'Road parts: ' . count($parts)
         );
 
-        $matchDistance = 50.0; // метров
-        $padding = 5.0;       // метров
+        $matchDistance = 50.0;
+        $padding = 5.0;
 
         $minLocation = INF;
         $maxLocation = -INF;
@@ -527,16 +441,6 @@ final class GeometryService
         ];
     }
 
-
-    /**
-     * Аналог turf.pointToLineDistance().
-     *
-     * Возвращает расстояние в метрах
-     * от точки до ближайшего сегмента линии.
-     *
-     * @param array{0:float,1:float} $point [lng,lat]
-     * @param array<array{0:float,1:float}> $lineCoordinates
-     */
     public function pointToLineDistance(
         array $point,
         array $lineCoordinates,
@@ -569,11 +473,6 @@ final class GeometryService
     }
 
 
-    /**
-     * Расстояние от точки до сегмента линии.
-     *
-     * Используем локальную проекцию в метры.
-     */
     private function pointToSegmentDistance(
         array $point,
         array $start,
@@ -639,19 +538,6 @@ final class GeometryService
         );
     }
 
-
-    /**
-     * Обрезает дорогу по маршруту.
-     *
-     * Возвращает только те части дороги,
-     * которые находятся в пределах maxDistance
-     * от маршрута.
-     *
-     * @param array<array{0:float,1:float}> $roadCoordinates
-     * @param array<array{0:float,1:float}> $routeCoordinates
-     *
-     * @return array<array<array{0:float,1:float}>>
-     */
     public function clipLineToRoute(
         array $roadCoordinates,
         array $routeCoordinates,
@@ -671,8 +557,6 @@ final class GeometryService
 
             $start = $roadCoordinates[$i];
             $end = $roadCoordinates[$i + 1];
-
-            // середина сегмента
             $middle = [
                 ($start[0] + $end[0]) / 2,
                 ($start[1] + $end[1]) / 2,
@@ -708,17 +592,6 @@ final class GeometryService
         return $result;
     }
 
-    /**
-     * Находит точку выхода/входа сегмента в область маршрута.
-     *
-     * Используется бинарный поиск между двумя точками.
-     *
-     * @param array{0:float,1:float} $inside
-     * @param array{0:float,1:float} $outside
-     * @param array<array{0:float,1:float}> $routeCoordinates
-     *
-     * @return array{0:float,1:float}
-     */
     private function interpolateClipPoint(
         array $inside,
         array $outside,
@@ -750,13 +623,7 @@ final class GeometryService
 
         return $a;
     }
-    /**
-     * Собирает все координаты маршрута
-     * из GeoJSON Feature.
-     *
-     * @param array $routeFeatures
-     * @return array<array{0:float,1:float}>
-     */
+
     public function extractRouteCoordinates(
         array $routeFeatures,
     ): array {
@@ -798,9 +665,6 @@ final class GeometryService
     }
 
 
-    /**
-     * EPSG:3857 -> WGS84.
-     */
     private function convertCoordinates(
         array $coordinates
     ): array {
@@ -812,7 +676,6 @@ final class GeometryService
                 $this->yToWGS84($coordinate[1]),
             ];
 
-            // Сохраняем M (линейную меру), если она есть
             if (isset($coordinate[2])) {
                 $converted[] = $coordinate[2];
             }
@@ -823,18 +686,12 @@ final class GeometryService
         return $coordinates;
     }
 
-    /**
-     * EPSG:3857 X -> longitude.
-     */
     private function xToWGS84(float $x): float
     {
         return ($x * 180) / 20037508.34;
     }
 
 
-    /**
-     * EPSG:3857 Y -> latitude.
-     */
     private function yToWGS84(float $y): float
     {
         $lat = ($y * 180) / 20037508.34;

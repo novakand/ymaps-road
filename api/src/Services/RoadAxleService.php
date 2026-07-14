@@ -4,436 +4,810 @@ declare(strict_types=1);
 
 namespace RouteGIS\Services;
 
+use RouteGIS\Http\CurlClient;
+
 final readonly class RoadAxleService
 {
-    private const MAX_PROJECTION_DISTANCE = 150.0;
-    private const MAX_ANGLE_DIFF = 45.0; // Максимальное отклонение угла в градусах
+    private const WFS_BASE_URL = 'https://xn--d1aluo.xn--p1ai/api-geoserver/skdf_open/wfs';
+
+    private const MAX_FEATURES = 1000;
+    private const MAX_PAGES = 100;
+    private const MAX_BBOX_SIZE_DEGREES = 1.0;
+    private const EARTH_RADIUS_METERS = 6371008.8;
+    private const CANDIDATE_DISTANCE_METERS = 60.0;
+
+    private const ASSIGN_DISTANCE_METERS = 60.0;
+
+    private const MAX_ANGLE_DIFF = 40.0;
+
+    private const MIN_PART_COVERAGE = 0.60;
+
+    private const SAMPLE_STEP_METERS = 80.0;
+
+    private const MAX_SAMPLE_POINTS = 31;
+
+    private const MATCH_WINDOW_METERS = 900.0;
+
+    private const MIN_WINDOW_METERS = 80.0;
+
+    private const ASSIGN_FALLBACK_DISTANCE_METERS = 100.0;
+    private const ASSIGN_FALLBACK_ANGLE_DIFF = 55.0;
+
+    private const DEBUG_TOP_CANDIDATES = 8;
+
+    private const LAYER_LOAD_MAP = [
+        'lyr_road_conditions_os_6' => 6.0,
+        'lyr_road_conditions_os_10' => 10.0,
+        'lyr_road_conditions_os_11_5' => 11.5,
+    ];
 
     public function __construct(
-        private RgisService $rgis,
-        private SkdfService $skdf,
-        private RouteFilterService $routeFilter,
-        private AxleLoadService $axleLoad,
-        private GeometryService $geometry,
+        private CurlClient $http,
     ) {
+        ini_set('error_log', __DIR__ . '/logs/road_axle_wfs.log');
     }
 
     public function analyze(
         array $routeFeatures,
-        array $bounds3857,
+        array $bounds4326,
         int $zoom,
+        int $chunkIndex = 0,
     ): array {
-        // ИСПРАВЛЕНИЕ: Фиксируем оптимальный масштаб для загородных и региональных трасс.
-        // На зумах 15-17 длинные трассы РГИС часто скрываются или режутся. Зум 13 — идеальный ГИС-стандарт.
-        $requestZoom = 13;
+        $bounds4326 = $this->normalizeBounds4326($bounds4326);
 
-        // Безопасно проверяем пришедший BBox. Если он передан в EPSG:3857 (миллионы метров), 
-        // мы используем его напрямую для запроса к РГИС.
-        $roadsResponse = $this->rgis->getRoadGeobox(
-            box: $bounds3857,
-            scaleFactor: 1,
-            zoom: $requestZoom,
+        if ($bounds4326 === null) {
+            error_log('Invalid route BBOX');
+            return $this->createEmptyFeatureCollection();
+        }
+
+        $bounds4326 = $this->limitBounds4326($bounds4326);
+
+        error_log(sprintf(
+            '=== RoadAxleWfsService::analyze === bounds4326=[%s], zoom=%d',
+            implode(', ', $bounds4326),
+            $zoom,
+        ));
+
+        $roads = $this->getAllRoads($bounds4326);
+
+        if ($roads === []) {
+            error_log('No WFS roads loaded');
+            return $this->createEmptyFeatureCollection();
+        }
+
+        $featuresByPartId = $this->groupFeaturesByPartId($roads);
+        $routeSegments = $this->extractRouteSegments($routeFeatures);
+
+        error_log(sprintf(
+            'Loaded %d WFS features, %d part_id groups, %d route segments',
+            count($roads),
+            count($featuresByPartId),
+            count($routeSegments),
+        ));
+
+        if ($routeSegments === [] || $featuresByPartId === []) {
+            return $this->createEmptyFeatureCollection();
+        }
+
+        $coloredSegments = $this->matchAndColorRoute(
+            $routeSegments,
+            $featuresByPartId,
         );
 
-        $roads = $roadsResponse['features'] ?? [];
+        error_log(sprintf(
+            'Created %d colored Yandex route segments',
+            count($coloredSegments),
+        ));
 
-        // Если РГИС вернул пустоту, логгируем это для отладки
-        if (empty($roads)) {
-            error_log(sprintf('⚠️ RGIS returned 0 roads for bounds: [%s]', implode(', ', $bounds3857)));
-            return $this->createEmptyFeatureCollection();
-        }
-
-        // Фильтруем дороги по треку чанка маршрута (использует обновленный RouteFilterService)
-        $filteredRoads = $this->routeFilter->filter($roads, $routeFeatures);
-
-        if (empty($filteredRoads)) {
-            return $this->createEmptyFeatureCollection();
-        }
-
-        // Собираем уникальные road_id для СКДФ
-        $roadIds = array_values(array_unique(array_map(
-            fn($road) => (int) ($road['properties']['road_id'] ?? 0),
-            $filteredRoads
-        )));
-
-        // Собираем уникальные категории значения дорог (value_of_the_road_gid)
-        $valueOfRoadGids = array_values(array_unique(array_filter(array_map(
-            fn($road) => (int) ($road['properties']['value_of_the_road_gid'] ?? 0),
-            $filteredRoads
-        ))));
-
-        // Собираем уникальные коды регионов (region_gid) для пространственного фоллбэка в СКДФ
-        $regionGids = array_values(array_unique(array_filter(array_map(
-            fn($road) => (int) ($road['properties']['region_gid'] ?? $road['properties']['region_id'] ?? 0),
-            $filteredRoads
-        ))));
-
-        if (empty($roadIds)) {
-            return $this->createEmptyFeatureCollection();
-        }
-
-        // Делаем точечный запрос в СКДФ с тройным фильтром (защита от разрывов и таймаутов на М-12 / 22Р)
-        $allRestrictions = $this->skdf->getAxleLoads($roadIds, $valueOfRoadGids, $regionGids);
-
-        $restrictionsByRoadPart = [];
-        foreach ($allRestrictions as $restriction) {
-            $roadPartId = (int) ($restriction['road_part_id'] ?? 0);
-            if ($roadPartId > 0) {
-                $restrictionsByRoadPart[$roadPartId][] = $restriction;
-            }
-        }
-
-        // Запускаем наш точный линейный алгоритм проецирования и нарезки интервалов в памяти PHP
-        $coloredSegments = $this->mapAndSplitRouteSegments(
-            $routeFeatures,
-            $filteredRoads,
-            $restrictionsByRoadPart
+        return $this->buildFeatureCollection(
+            $coloredSegments,
+            $chunkIndex,
         );
-
-        return $this->buildFeatureCollection($coloredSegments);
     }
 
-
-    /**
-     * Сопоставляет сегменты маршрута с дорогами
-     * ИСПОЛЬЗУЕТ chunkAngle и chunkDistance из свойств
-     */
-    private function mapAndSplitRouteSegments(
-        array $routeFeatures,
-        array $roadFeatures,
-        array $restrictionsByRoadPart,
+    private function matchAndColorRoute(
+        array $routeSegments,
+        array $featuresByPartId,
     ): array {
-        $routeSegments = $this->extractRouteSegments($routeFeatures);
         $result = [];
+        $previousPartId = null;
 
-        error_log('=== MAPPING WITH CHUNK ANGLE AND DISTANCE ===');
+        foreach ($routeSegments as $segmentIndex => $routeSegment) {
+            $points = $routeSegment['points'];
 
-        foreach ($routeSegments as $segmentIndex => $segment) {
-            $points = $segment['points'] ?? [];
-
-            // Используем chunkDistance вместо distance из Yandex
-            $segmentDistance = $segment['chunkDistance'] ?? $segment['distance'] ?? 0;
-            $segmentAngle = $segment['chunkAngle'] ?? 0;
-
-            if (empty($points) || $segmentDistance == 0) {
+            if (count($points) < 2) {
                 continue;
             }
 
-            // Находим дорогу для сегмента с учетом угла
-            $middleIndex = (int) floor(count($points) / 2);
-            $middlePoint = $points[$middleIndex];
-
-            $roadInfo = $this->findNearestRoadWithAngle(
-                $middlePoint,
-                $roadFeatures,
-                $segmentAngle
+            $windows = $this->splitLineIntoWindows(
+                $points,
+                self::MATCH_WINDOW_METERS,
             );
 
-            if ($roadInfo === null) {
+            error_log(sprintf(
+                'SEGMENT %d: points=%d length=%.1fm windows=%d previousPart=%s',
+                $segmentIndex,
+                count($points),
+                $this->calculateLineLength($points),
+                count($windows),
+                $previousPartId ?? 'null',
+            ));
+
+            foreach ($windows as $windowIndex => $windowPoints) {
+                if (count($windowPoints) < 2) {
+                    continue;
+                }
+
+                $windowLength = $this->calculateLineLength($windowPoints);
+                $samples = $this->sampleLineByDistance($windowPoints);
+                $context = sprintf('S%d/W%d', $segmentIndex, $windowIndex);
+
                 error_log(sprintf(
-                    '⚠️ Segment %d: No road found with angle %.1f°, trying without angle',
-                    $segmentIndex,
-                    $segmentAngle
+                    '%s START: points=%d samples=%d length=%.1fm previousPart=%s',
+                    $context,
+                    count($windowPoints),
+                    count($samples),
+                    $windowLength,
+                    $previousPartId ?? 'null',
                 ));
-                $roadInfo = $this->findNearestRoad($middlePoint, $roadFeatures);
+
+                $match = $this->findBestPartMatch(
+                    samplePoints: $samples,
+                    routePoints: $windowPoints,
+                    featuresByPartId: $featuresByPartId,
+                    previousPartId: $previousPartId,
+                    context: $context,
+                );
+
+                if ($match === null) {
+                    error_log(sprintf(
+                        '%s RESULT: no reliable part_id match',
+                        $context,
+                    ));
+                    $previousPartId = null;
+                    continue;
+                }
+
+                $partId = $match['part_id'];
+
+                error_log(sprintf(
+                    '%s RESULT: part_id=%s road="%s" coverage=%.0f%% longestRun=%.0f%% matched=%d/%d median=%.2fm p90=%.2fm angle=%.1f score=%.3f previous=%s',
+                    $context,
+                    $partId,
+                    $match['road_name'],
+                    $match['coverage'] * 100.0,
+                    $match['longest_run_ratio'] * 100.0,
+                    $match['matched'],
+                    $match['sample_count'],
+                    $match['median_distance'],
+                    $match['p90_distance'],
+                    $match['median_angle'],
+                    $match['score'],
+                    $previousPartId ?? 'null',
+                ));
+
+                $colored = $this->colorOriginalRouteByPart(
+                    routePoints: $windowPoints,
+                    features: $featuresByPartId[$partId],
+                    segmentIndex: $segmentIndex,
+                    partId: $partId,
+                    context: $context,
+                );
+
+                if ($colored === []) {
+                    error_log(sprintf(
+                        '%s COLOR: selected part_id=%s but produced no colored geometry',
+                        $context,
+                        $partId,
+                    ));
+                }
+
+                foreach ($colored as $item) {
+                    $result[] = $item;
+                }
+
+                $previousPartId = $partId;
+            }
+        }
+
+        return $this->mergeAdjacentColoredSegments($result);
+    }
+
+    private function findBestPartMatch(
+        array $samplePoints,
+        array $routePoints,
+        array $featuresByPartId,
+        ?string $previousPartId,
+        string $context = '',
+    ): ?array {
+        if ($samplePoints === []) {
+            return null;
+        }
+
+        $routeAngle = $this->calculateLineAngle($routePoints);
+        $candidates = [];
+        $sampleCount = count($samplePoints);
+        $rejectStats = [
+            'no_match' => 0,
+            'coverage' => 0,
+            'distance' => 0,
+            'angle' => 0,
+        ];
+
+        foreach ($featuresByPartId as $partId => $features) {
+            $distances = [];
+            $angles = [];
+            $matchedMask = [];
+
+            foreach ($samplePoints as $sampleIndex => $point) {
+                $localRouteAngle = $this->calculateRouteAngleAtSample(
+                    $samplePoints,
+                    $sampleIndex,
+                    $routeAngle,
+                );
+
+                $projection = $this->projectPointToFeatures(
+                    point: $point,
+                    features: $features,
+                    requiredAngle: $localRouteAngle,
+                    maxDistance: self::CANDIDATE_DISTANCE_METERS,
+                    maxAngleDiff: self::MAX_ANGLE_DIFF,
+                );
+
+                if ($projection === null) {
+                    $matchedMask[] = false;
+                    continue;
+                }
+
+                $matchedMask[] = true;
+                $distances[] = $projection['distance'];
+                $angles[] = $projection['angle_diff'];
             }
 
-            if ($roadInfo === null) {
-                error_log(sprintf(
-                    '⚠️ Segment %d: No road found, skipping',
-                    $segmentIndex
-                ));
+            $matched = count($distances);
+
+            if ($matched === 0) {
+                $rejectStats['no_match']++;
                 continue;
             }
 
-            $roadPartId = $roadInfo['road_part_id'];
-            $roadProperties = $roadInfo['road_properties'] ?? [];
-            $roadGeometry = $roadInfo['geometry'] ?? null;
+            $coverage = $matched / $sampleCount;
+            $longestRun = $this->longestTrueRun($matchedMask);
+            $longestRunRatio = $longestRun / $sampleCount;
+            $medianDistance = $this->percentile($distances, 0.50);
+            $p90Distance = $this->percentile($distances, 0.90);
+            $medianAngle = $this->percentile($angles, 0.50);
 
-            if ($roadGeometry === null) {
+            if ($coverage < self::MIN_PART_COVERAGE) {
+                $rejectStats['coverage']++;
                 continue;
             }
 
-            // Проецируем точки на геометрию дороги
-            $projectedPoints = [];
-            foreach ($points as $point) {
-                $projection = $this->projectPointToRoad($point, $roadGeometry);
-                if ($projection !== null) {
-                    $projectedPoints[] = [
-                        'point' => $point,
-                        'm' => $projection['m'],
-                        'distance' => $projection['distance'],
-                    ];
+            if (
+                $medianDistance > self::ASSIGN_DISTANCE_METERS ||
+                $p90Distance > self::CANDIDATE_DISTANCE_METERS
+            ) {
+                $rejectStats['distance']++;
+                continue;
+            }
+
+            if ($medianAngle > self::MAX_ANGLE_DIFF) {
+                $rejectStats['angle']++;
+                continue;
+            }
+
+            $coveragePenalty = (1.0 - $coverage) * 120.0;
+            $continuityPenalty = (1.0 - $longestRunRatio) * 45.0;
+            $distancePenalty = $medianDistance + ($p90Distance * 0.35);
+            $anglePenalty = $medianAngle * 0.75;
+
+            $samePartBonus = (
+                $previousPartId !== null &&
+                (string) $partId === $previousPartId
+            ) ? 8.0 : 0.0;
+
+            $attributeBonus = $this->calculateAttributeTieBreaker($features);
+
+            $score = $coveragePenalty
+                + $continuityPenalty
+                + $distancePenalty
+                + $anglePenalty
+                - $samePartBonus
+                - $attributeBonus;
+
+            $properties = $features[0]['properties'] ?? [];
+
+            $candidates[] = [
+                'part_id' => (string) $partId,
+                'road_name' => (string) ($properties['road_name'] ?? ''),
+                'coverage' => $coverage,
+                'longest_run_ratio' => $longestRunRatio,
+                'matched' => $matched,
+                'sample_count' => $sampleCount,
+                'median_distance' => $medianDistance,
+                'p90_distance' => $p90Distance,
+                'median_angle' => $medianAngle,
+                'attribute_bonus' => $attributeBonus,
+                'same_part_bonus' => $samePartBonus,
+                'score' => $score,
+            ];
+        }
+
+        if ($candidates === []) {
+            error_log(sprintf(
+                '%s CANDIDATES: none; rejected noMatch=%d coverage=%d distance=%d angle=%d',
+                $context,
+                $rejectStats['no_match'],
+                $rejectStats['coverage'],
+                $rejectStats['distance'],
+                $rejectStats['angle'],
+            ));
+            return null;
+        }
+
+        usort(
+            $candidates,
+            static fn(array $a, array $b): int =>
+            $a['score'] <=> $b['score'],
+        );
+
+        foreach (array_slice($candidates, 0, self::DEBUG_TOP_CANDIDATES) as $rank => $candidate) {
+            error_log(sprintf(
+                '%s CANDIDATE #%d part=%s road="%s" matched=%d/%d coverage=%.0f%% run=%.0f%% med=%.2fm p90=%.2fm angle=%.1f attr=%.2f prevBonus=%.1f score=%.3f',
+                $context,
+                $rank + 1,
+                $candidate['part_id'],
+                $candidate['road_name'],
+                $candidate['matched'],
+                $candidate['sample_count'],
+                $candidate['coverage'] * 100.0,
+                $candidate['longest_run_ratio'] * 100.0,
+                $candidate['median_distance'],
+                $candidate['p90_distance'],
+                $candidate['median_angle'],
+                $candidate['attribute_bonus'],
+                $candidate['same_part_bonus'],
+                $candidate['score'],
+            ));
+        }
+
+        return $candidates[0];
+    }
+
+    private function colorOriginalRouteByPart(
+        array $routePoints,
+        array $features,
+        int $segmentIndex,
+        string $partId,
+        string $context = '',
+    ): array {
+        $result = [];
+        $current = null;
+        $previousFeatureKey = null;
+
+        for ($i = 0, $count = count($routePoints) - 1; $i < $count; $i++) {
+            $a = $routePoints[$i];
+            $b = $routePoints[$i + 1];
+            $midpoint = [
+                ($a[0] + $b[0]) / 2.0,
+                ($a[1] + $b[1]) / 2.0,
+            ];
+            $routeAngle = $this->calculateSegmentAngle($a, $b);
+
+            $projection = $this->projectPointToFeatures(
+                point: $midpoint,
+                features: $features,
+                requiredAngle: $routeAngle,
+                maxDistance: self::ASSIGN_DISTANCE_METERS,
+                maxAngleDiff: self::MAX_ANGLE_DIFF,
+                preferredFeatureKey: $previousFeatureKey,
+            );
+
+            if ($projection === null) {
+                $projectionA = $this->projectPointToFeatures(
+                    point: $a,
+                    features: $features,
+                    requiredAngle: $routeAngle,
+                    maxDistance: self::ASSIGN_FALLBACK_DISTANCE_METERS,
+                    maxAngleDiff: self::ASSIGN_FALLBACK_ANGLE_DIFF,
+                    preferredFeatureKey: $previousFeatureKey,
+                );
+                $projectionB = $this->projectPointToFeatures(
+                    point: $b,
+                    features: $features,
+                    requiredAngle: $routeAngle,
+                    maxDistance: self::ASSIGN_FALLBACK_DISTANCE_METERS,
+                    maxAngleDiff: self::ASSIGN_FALLBACK_ANGLE_DIFF,
+                    preferredFeatureKey: $previousFeatureKey,
+                );
+
+                if ($projectionA !== null || $projectionB !== null) {
+                    if ($projectionA === null) {
+                        $projection = $projectionB;
+                    } elseif ($projectionB === null) {
+                        $projection = $projectionA;
+                    } else {
+                        $projection = $projectionA['score'] <= $projectionB['score']
+                            ? $projectionA
+                            : $projectionB;
+                    }
+
+                    error_log(sprintf(
+                        '%s COLOR fallback part=%s routeSeg=%d distance=%.2fm angle=%.1f',
+                        $context,
+                        $partId,
+                        $i,
+                        $projection['distance'],
+                        $projection['angle_diff'],
+                    ));
                 }
             }
 
-            if (empty($projectedPoints)) {
+            if ($projection === null) {
                 error_log(sprintf(
-                    '⚠️ Segment %d: No projections found',
-                    $segmentIndex
+                    '%s COLOR gap part=%s routeSeg=%d a=[%.6f,%.6f] b=[%.6f,%.6f]',
+                    $context,
+                    $partId,
+                    $i,
+                    $a[0],
+                    $a[1],
+                    $b[0],
+                    $b[1],
                 ));
+
+                if ($current !== null) {
+                    $this->flushColoredSegment($result, $current);
+                    $current = null;
+                }
+                $previousFeatureKey = null;
                 continue;
             }
 
-            // M-координаты начала и конца сегмента
-            $segmentStartM = $projectedPoints[0]['m'];
-            $segmentEndM = $projectedPoints[count($projectedPoints) - 1]['m'];
+            $feature = $projection['feature'];
+            $properties = $feature['properties'] ?? [];
+            $featureKey = $this->getFeatureKey($feature);
+            $load = (float) ($properties['os'] ?? 0.0);
+            $color = $this->resolveStatusColor($load);
+            $measure = $this->calculateMeasureMeters($projection, $feature);
 
-            error_log(sprintf(
-                '✅ Segment %d: angle=%.1f°, distance=%.0f m, M=[%.0f, %.0f] m, road_part_id=%d',
-                $segmentIndex,
-                $segmentAngle,
-                $segmentDistance,
-                $segmentStartM,
-                $segmentEndM,
-                $roadPartId
-            ));
+            $styleKey = implode('|', [
+                $featureKey,
+                (string) $load,
+                $color,
+            ]);
 
-            $restrictions = $restrictionsByRoadPart[$roadPartId] ?? [];
+            if ($current === null || $current['style_key'] !== $styleKey) {
+                if ($current !== null) {
+                    $this->flushColoredSegment($result, $current);
+                }
 
-            $subSegments = $this->splitSegmentByRestrictions(
-                $projectedPoints,
-                $segmentStartM,
-                $segmentEndM,
-                $restrictions,
-                $roadProperties
-            );
+                $current = [
+                    'style_key' => $styleKey,
+                    'points' => [$a, $b],
+                    'color' => $color,
+                    'road_properties' => [
+                        'max_axle_load' => $load,
+                        'load_category' => $load . 't',
+                        'road_id' => $properties['road_id'] ?? null,
+                        'road_name' => $properties['road_name'] ?? null,
+                        'part_id' => $partId,
+                        'feature_id' => $properties['id'] ?? null,
+                        'source_layer' => $properties['source_layer'] ?? null,
+                        'segment_index' => $segmentIndex,
+                        'measure_start' => $measure,
+                        'measure_end' => $measure,
+                        'match_distance' => $projection['distance'],
+                        'match_angle_diff' => $projection['angle_diff'],
+                    ],
+                ];
+            } else {
+                $lastPoint = $current['points'][count($current['points']) - 1];
+                if (!$this->pointsEqual($lastPoint, $b)) {
+                    $current['points'][] = $b;
+                }
+                $current['road_properties']['measure_end'] = $measure;
+                $current['road_properties']['match_distance'] = max(
+                    (float) $current['road_properties']['match_distance'],
+                    $projection['distance'],
+                );
+            }
 
-            $result = array_merge($result, $subSegments);
+            $previousFeatureKey = $featureKey;
         }
 
-        error_log('Total colored sub-segments: ' . count($result));
+        if ($current !== null) {
+            $this->flushColoredSegment($result, $current);
+        }
+
         return $result;
     }
 
-    /**
-     * Находит ближайшую дорогу с учетом угла
-     */
-    /**
-     * Находит ближайшую дорогу с учетом угла (Уровень 1)
-     * ИСПРАВЛЕНО: Демпфирует параллельное расстояние, защищая от боковых наводок на перекрестках
-     */
-    private function findNearestRoadWithAngle(
+    private function splitLineIntoWindows(
+        array $points,
+        float $windowMeters,
+    ): array {
+        if (count($points) < 2) {
+            return [];
+        }
+
+        $cumulative = [0.0];
+        for ($i = 1, $count = count($points); $i < $count; $i++) {
+            $cumulative[$i] = $cumulative[$i - 1]
+                + $this->haversineDistance($points[$i - 1], $points[$i]);
+        }
+
+        $totalLength = $cumulative[count($cumulative) - 1];
+        if ($totalLength <= $windowMeters) {
+            return [$points];
+        }
+
+        $windows = [];
+        for ($start = 0.0; $start < $totalLength; $start += $windowMeters) {
+            $end = min($totalLength, $start + $windowMeters);
+            $window = $this->sliceLineByDistance($points, $cumulative, $start, $end);
+
+            if (count($window) >= 2) {
+                $windows[] = $window;
+            }
+        }
+
+        if (count($windows) >= 2) {
+            $lastIndex = count($windows) - 1;
+            $lastLength = $this->calculateLineLength($windows[$lastIndex]);
+
+            if ($lastLength < self::MIN_WINDOW_METERS) {
+                $tail = array_shift($windows[$lastIndex]);
+                unset($tail);
+                $windows[$lastIndex - 1] = array_merge(
+                    $windows[$lastIndex - 1],
+                    $windows[$lastIndex],
+                );
+                array_pop($windows);
+            }
+        }
+
+        return $windows;
+    }
+
+    private function sliceLineByDistance(
+        array $points,
+        array $cumulative,
+        float $startDistance,
+        float $endDistance,
+    ): array {
+        $slice = [
+            $this->interpolatePointAlongLine($points, $cumulative, $startDistance),
+        ];
+
+        for ($i = 1, $count = count($points); $i < $count - 1; $i++) {
+            if (
+                $cumulative[$i] > $startDistance &&
+                $cumulative[$i] < $endDistance
+            ) {
+                $slice[] = $points[$i];
+            }
+        }
+
+        $endPoint = $this->interpolatePointAlongLine(
+            $points,
+            $cumulative,
+            $endDistance,
+        );
+
+        if (!$this->pointsEqual($slice[count($slice) - 1], $endPoint)) {
+            $slice[] = $endPoint;
+        }
+
+        return $slice;
+    }
+
+    private function calculateLineLength(array $points): float
+    {
+        $length = 0.0;
+        for ($i = 1, $count = count($points); $i < $count; $i++) {
+            $length += $this->haversineDistance($points[$i - 1], $points[$i]);
+        }
+
+        return $length;
+    }
+
+    private function longestTrueRun(array $mask): int
+    {
+        $best = 0;
+        $current = 0;
+
+        foreach ($mask as $matched) {
+            if ($matched) {
+                $current++;
+                $best = max($best, $current);
+            } else {
+                $current = 0;
+            }
+        }
+
+        return $best;
+    }
+
+    private function calculateAttributeTieBreaker(array $features): float
+    {
+        $properties = $features[0]['properties'] ?? [];
+        $bonus = 0.0;
+
+        if (($properties['skeleton'] ?? null) === 'Опорная сеть') {
+            $bonus += 1.5;
+        }
+
+        if (in_array(($properties['is_checked'] ?? null), ['Y', '1', 1], true)) {
+            $bonus += 0.5;
+        }
+
+        $lanes = (int) ($properties['lanes'] ?? 0);
+        $bonus += min(max($lanes, 0), 4) * 0.25;
+
+        $width = max(
+            (float) ($properties['roadway_width'] ?? 0.0),
+            (float) ($properties['roadbed_width'] ?? 0.0),
+        );
+        $bonus += min(max($width, 0.0) / 10.0, 1.0);
+
+        $capacity = (float) ($properties['capacity'] ?? 0.0);
+        if ($capacity > 0.0) {
+            $bonus += min(log10(max($capacity, 1.0)) * 0.25, 1.0);
+        }
+
+        return min($bonus, 4.0);
+    }
+
+    private function mergeAdjacentColoredSegments(array $segments): array
+    {
+        $result = [];
+
+        foreach ($segments as $segment) {
+            if ($result === []) {
+                $result[] = $segment;
+                continue;
+            }
+
+            $lastIndex = count($result) - 1;
+            $last = $result[$lastIndex];
+
+            $sameStyle = ($last['color'] ?? null) === ($segment['color'] ?? null)
+                && (($last['road_properties']['part_id'] ?? null)
+                    === ($segment['road_properties']['part_id'] ?? null))
+                && (($last['road_properties']['source_layer'] ?? null)
+                    === ($segment['road_properties']['source_layer'] ?? null));
+
+            $lastPoint = $last['points'][count($last['points']) - 1] ?? null;
+            $firstPoint = $segment['points'][0] ?? null;
+
+            if (
+                $sameStyle &&
+                is_array($lastPoint) &&
+                is_array($firstPoint) &&
+                $this->pointsEqual($lastPoint, $firstPoint)
+            ) {
+                $points = $segment['points'];
+                array_shift($points);
+                $result[$lastIndex]['points'] = array_merge(
+                    $result[$lastIndex]['points'],
+                    $points,
+                );
+                $result[$lastIndex]['road_properties']['measure_end'] =
+                    $segment['road_properties']['measure_end'] ??
+                    $result[$lastIndex]['road_properties']['measure_end'] ?? null;
+                continue;
+            }
+
+            $result[] = $segment;
+        }
+
+        return $result;
+    }
+
+    private function flushColoredSegment(array &$result, array $segment): void
+    {
+        if (count($segment['points']) < 2) {
+            return;
+        }
+
+        unset($segment['style_key']);
+        $result[] = $segment;
+    }
+
+    private function projectPointToFeatures(
         array $point,
-        array $roadFeatures,
-        float $routeAngle
+        array $features,
+        float $requiredAngle,
+        float $maxDistance,
+        float $maxAngleDiff,
+        ?string $preferredFeatureKey = null,
     ): ?array {
         $best = null;
         $bestScore = INF;
 
-        foreach ($roadFeatures as $road) {
-            $geometry = $road['geometry'] ?? null;
-            if (!$geometry) {
-                continue;
-            }
+        foreach ($features as $feature) {
+            $lines = $this->extractGeometryLines($feature['geometry'] ?? []);
 
-            $projection = $this->projectPointToRoad($point, $geometry);
-            if ($projection === null) {
-                continue;
-            }
+            foreach ($lines as $line) {
+                $projection = $this->projectPointToLine($point, $line);
 
-            // Находим сегмент дороги для вычисления угла
-            $segment = $this->findProjectedSegment($point, $geometry, $projection);
-            if ($segment === null) {
-                continue;
-            }
+                if ($projection === null || $projection['distance'] > $maxDistance) {
+                    continue;
+                }
 
-            $roadAngle = $this->calculateSegmentAngle($segment['a'], $segment['b']);
-            $angleDiff = $this->calculateAngleDifference($routeAngle, $roadAngle);
+                $roadAngle = $this->calculateLocalRoadAngle(
+                    $line,
+                    $projection['segment_index'],
+                );
 
-            // Если угол сильно отличается — пропускаем (на 1-м уровне держим строгий коридор)
-            if ($angleDiff > self::MAX_ANGLE_DIFF) {
-                continue;
-            }
+                if ($roadAngle === null) {
+                    continue;
+                }
 
-            // ИСПРАВЛЕНИЕ СКОРИНГА НА 1 УРОВНЕ:
-            // Умножаем физическую дистанцию на коэффициент 0.1 (демпфируем её).
-            // Благодаря этому стабильный параллельный сдвиг в 15 метров превратится всего в +1.5 балла штрафа.
-            // Теперь боковая улица, которая оказалась геометрически ближе на перекрестке, 
-            // но идет под углом, больше не сможет перебить вашу родную параллельную трассу СКДФ!
-            $distancePenalty = $projection['distance'] * 0.1;
-            $anglePenalty = $angleDiff * 4.0; // Жесткий приоритет сонаправленности движения
+                $angleDiff = $this->calculateUndirectedAngleDifference(
+                    $requiredAngle,
+                    $roadAngle,
+                );
 
-            $score = $distancePenalty + $anglePenalty;
+                if ($angleDiff > $maxAngleDiff) {
+                    continue;
+                }
 
-            if ($score < $bestScore) {
+                $featureKey = $this->getFeatureKey($feature);
+                $continuityBonus = (
+                    $preferredFeatureKey !== null &&
+                    $featureKey === $preferredFeatureKey
+                ) ? 4.0 : 0.0;
+
+                $score = $projection['distance']
+                    + ($angleDiff * 0.65)
+                    - $continuityBonus;
+
+                if ($score >= $bestScore) {
+                    continue;
+                }
+
                 $bestScore = $score;
-                $best = [
-                    'road_part_id' => (int) ($road['properties']['road_part_id'] ?? 0),
-                    'start_km' => (float) ($road['properties']['start_km'] ?? 0),
-                    'road_properties' => $road['properties'] ?? [],
-                    'geometry' => $geometry,
-                    'distance' => $projection['distance'], // сохраняем реальную физическую дистанцию
-                    'm' => $projection['m'],
+                $best = array_merge($projection, [
+                    'feature' => $feature,
+                    'line' => $line,
                     'road_angle' => $roadAngle,
                     'angle_diff' => $angleDiff,
-                ];
+                    'score' => $score,
+                ]);
             }
         }
 
-        // Проверяем, что итоговая дистанция до лучшего параллельного кандидата укладывается в лимит
-        if ($best !== null && $best['distance'] <= self::MAX_PROJECTION_DISTANCE) {
-            return $best;
-        }
-
-        return null;
+        return $best;
     }
 
-    /**
-     * Находит сегмент дороги, на который спроецировалась точка
-     */
-    private function findProjectedSegment(
-        array $point,
-        array $geometry,
-        array $projection
-    ): ?array {
-        if (!isset($geometry['type']) || !isset($geometry['coordinates'])) {
+    private function projectPointToLine(array $point, array $line): ?array
+    {
+        if (count($line) < 2) {
             return null;
         }
-
-        $parts = $geometry['type'] === 'LineString'
-            ? [$geometry['coordinates']]
-            : $geometry['coordinates'];
-
-        $bestSegment = null;
-        $bestDistance = INF;
-
-        foreach ($parts as $part) {
-            $count = count($part);
-            if ($count < 2) {
-                continue;
-            }
-
-            for ($i = 0; $i < $count - 1; $i++) {
-                if (count($part[$i]) < 3 || count($part[$i + 1]) < 3) {
-                    continue;
-                }
-
-                $result = $this->projectPointToSegment(
-                    $point,
-                    $part[$i],
-                    $part[$i + 1]
-                );
-
-                if ($result !== null && $result['distance'] < $bestDistance) {
-                    $bestDistance = $result['distance'];
-                    $bestSegment = [
-                        'a' => $part[$i],
-                        'b' => $part[$i + 1],
-                        'index' => $i,
-                    ];
-                }
-            }
-        }
-
-        return $bestSegment;
-    }
-
-    /**
-     * Вычисляет угол между двумя точками в градусах
-     */
-    private function calculateSegmentAngle(array $a, array $b): float
-    {
-        $dx = $b[0] - $a[0];
-        $dy = $b[1] - $a[1];
-
-        $angle = rad2deg(atan2($dx, $dy));
-
-        if ($angle < 0) {
-            $angle += 360;
-        }
-
-        return $angle;
-    }
-
-    /**
-     * Вычисляет минимальную разницу между углами
-     */
-    private function calculateAngleDifference(float $angle1, float $angle2): float
-    {
-        $diff = abs($angle1 - $angle2);
-
-        if ($diff > 180) {
-            $diff = 360 - $diff;
-        }
-
-        return $diff;
-    }
-
-    /**
-     * Находит ближайшую дорогу (без учета угла) - fallback
-     */
-    private function findNearestRoad(array $point, array $roadFeatures): ?array
-    {
-        $best = null;
-        $bestDistance = INF;
-
-        foreach ($roadFeatures as $road) {
-            $geometry = $road['geometry'] ?? null;
-            if (!$geometry) {
-                continue;
-            }
-
-            $projection = $this->projectPointToRoad($point, $geometry);
-
-            if ($projection !== null && $projection['distance'] < $bestDistance) {
-                $bestDistance = $projection['distance'];
-                $best = [
-                    'road_part_id' => (int) ($road['properties']['road_part_id'] ?? 0),
-                    'start_km' => (float) ($road['properties']['start_km'] ?? 0),
-                    'road_properties' => $road['properties'] ?? [],
-                    'geometry' => $geometry,
-                    'distance' => $projection['distance'],
-                    'm' => $projection['m'],
-                ];
-            }
-        }
-
-        if ($best !== null && $best['distance'] <= self::MAX_PROJECTION_DISTANCE) {
-            return $best;
-        }
-
-        return null;
-    }
-
-    private function projectPointToRoad(array $point, array $geometry): ?array
-    {
-        if (!isset($geometry['type']) || !isset($geometry['coordinates'])) {
-            return null;
-        }
-
-        $parts = $geometry['type'] === 'LineString'
-            ? [$geometry['coordinates']]
-            : $geometry['coordinates'];
 
         $best = null;
         $bestDistance = INF;
 
-        foreach ($parts as $part) {
-            $count = count($part);
-            if ($count < 2) {
+        for ($i = 0, $count = count($line) - 1; $i < $count; $i++) {
+            $a = $line[$i];
+            $b = $line[$i + 1];
+
+            if (count($a) < 2 || count($b) < 2) {
                 continue;
             }
 
-            for ($i = 0; $i < $count - 1; $i++) {
-                if (count($part[$i]) < 3 || count($part[$i + 1]) < 3) {
-                    continue;
-                }
+            $projection = $this->projectPointToSegment($point, $a, $b);
 
-                $result = $this->projectPointToSegment(
-                    $point,
-                    $part[$i],
-                    $part[$i + 1]
-                );
-
-                if ($result !== null && $result['distance'] < $bestDistance) {
-                    $bestDistance = $result['distance'];
-                    $best = [
-                        'm' => $result['m'],
-                        'distance' => $result['distance'],
-                    ];
-                }
+            if ($projection === null || $projection['distance'] >= $bestDistance) {
+                continue;
             }
+
+            $bestDistance = $projection['distance'];
+            $best = array_merge($projection, [
+                'segment_index' => $i,
+            ]);
         }
 
         return $best;
@@ -444,18 +818,7 @@ final readonly class RoadAxleService
         array $a,
         array $b,
     ): ?array {
-        $margin = 0.005;
-
-        if (
-            $point[0] < min($a[0], $b[0]) - $margin ||
-            $point[0] > max($a[0], $b[0]) + $margin ||
-            $point[1] < min($a[1], $b[1]) - $margin ||
-            $point[1] > max($a[1], $b[1]) + $margin
-        ) {
-            return null;
-        }
-
-        $lat0 = deg2rad(($a[1] + $b[1] + $point[1]) / 3);
+        $lat0 = deg2rad(($point[1] + $a[1] + $b[1]) / 3.0);
         $kx = cos($lat0) * 111320.0;
         $ky = 110540.0;
 
@@ -470,271 +833,223 @@ final readonly class RoadAxleService
         $aby = $by - $ay;
         $lengthSquared = ($abx * $abx) + ($aby * $aby);
 
-        if ($lengthSquared == 0.0) {
+        if ($lengthSquared <= 0.0) {
             return null;
         }
 
-        $t = max(0.0, min(1.0, (
-            (($px - $ax) * $abx) + (($py - $ay) * $aby)
-        ) / $lengthSquared));
+        $t = ((($px - $ax) * $abx) + (($py - $ay) * $aby))
+            / $lengthSquared;
+        $t = max(0.0, min(1.0, $t));
 
-        $m = (float) $a[2] + (((float) $b[2] - (float) $a[2]) * $t);
-        $distance = hypot(
-            $px - ($ax + ($abx * $t)),
-            $py - ($ay + ($aby * $t))
-        );
-
-        if ($distance > self::MAX_PROJECTION_DISTANCE) {
-            return null;
-        }
+        $projectedX = $ax + ($abx * $t);
+        $projectedY = $ay + ($aby * $t);
 
         return [
-            'm' => $m,
-            'distance' => $distance,
+            'distance' => hypot($px - $projectedX, $py - $projectedY),
+            't' => $t,
+            'point' => [
+                $projectedX / $kx,
+                $projectedY / $ky,
+            ],
         ];
     }
 
+    private function calculateMeasureMeters(
+        array $projection,
+        array $feature,
+    ): ?float {
+        $properties = $feature['properties'] ?? [];
 
-    /**
-     * Разбивает сегмент на подсегменты по ограничениям СКДФ
-     * ИСПРАВЛЕНО: Заменяет черный дебаг-цвет нормативным фоллбэком по значению дороги
-     */
-    private function splitSegmentByRestrictions(
-        array $projectedPoints,
-        float $segmentStartM,
-        float $segmentEndM,
-        array $restrictions,
-        array $roadProperties,
+        if (!isset($properties['start_km'], $properties['finish_km'])) {
+            return null;
+        }
+
+        $line = $projection['line'] ?? [];
+        $segmentIndex = (int) ($projection['segment_index'] ?? 0);
+        $t = (float) ($projection['t'] ?? 0.0);
+
+        if (count($line) < 2) {
+            return null;
+        }
+
+        $lengths = [0.0];
+
+        for ($i = 1, $count = count($line); $i < $count; $i++) {
+            $lengths[$i] = $lengths[$i - 1]
+                + $this->haversineDistance($line[$i - 1], $line[$i]);
+        }
+
+        $totalLength = $lengths[count($lengths) - 1];
+
+        if ($totalLength <= 0.0) {
+            return (float) $properties['start_km'] * 1000.0;
+        }
+
+        $segmentIndex = max(0, min($segmentIndex, count($line) - 2));
+        $segmentLength = $lengths[$segmentIndex + 1] - $lengths[$segmentIndex];
+        $positionMeters = $lengths[$segmentIndex] + ($segmentLength * $t);
+        $fraction = max(0.0, min(1.0, $positionMeters / $totalLength));
+
+        $startMeters = (float) $properties['start_km'] * 1000.0;
+        $finishMeters = (float) $properties['finish_km'] * 1000.0;
+
+        return $startMeters + (($finishMeters - $startMeters) * $fraction);
+    }
+
+    private function sampleLineByDistance(array $points): array
+    {
+        if (count($points) <= 2) {
+            return $points;
+        }
+
+        $cumulative = [0.0];
+
+        for ($i = 1, $count = count($points); $i < $count; $i++) {
+            $cumulative[$i] = $cumulative[$i - 1]
+                + $this->haversineDistance($points[$i - 1], $points[$i]);
+        }
+
+        $totalLength = $cumulative[count($cumulative) - 1];
+
+        if ($totalLength <= 0.0) {
+            return [$points[0], $points[count($points) - 1]];
+        }
+
+        $desiredCount = (int) ceil($totalLength / self::SAMPLE_STEP_METERS) + 1;
+        $sampleCount = max(5, min(self::MAX_SAMPLE_POINTS, $desiredCount));
+        $samples = [];
+
+        for ($sampleIndex = 0; $sampleIndex < $sampleCount; $sampleIndex++) {
+            $target = $sampleIndex === $sampleCount - 1
+                ? $totalLength
+                : ($totalLength * $sampleIndex / ($sampleCount - 1));
+
+            $samples[] = $this->interpolatePointAlongLine(
+                $points,
+                $cumulative,
+                $target,
+            );
+        }
+
+        return $samples;
+    }
+
+    private function interpolatePointAlongLine(
+        array $points,
+        array $cumulative,
+        float $targetDistance,
     ): array {
-        // Устанавливаем гарантированные границы диапазона независимо от направления движения
-        $segmentMinM = min($segmentStartM, $segmentEndM);
-        $segmentMaxM = max($segmentStartM, $segmentEndM);
+        $lastIndex = count($points) - 1;
 
-        // =========================================================================
-        // ИСПРАВЛЕНИЕ: Вместо черного дебага подставляем нормативный цвет класса дороги
-        // =========================================================================
-        if (empty($restrictions)) {
-            // Вычисляем класс дороги по её свойствам из РГИС (value_of_the_road_gid)
-            // 83717 — Федеральные (М-12, М-7), 83718 — Региональные (22Р-0159)
-            $roadClassGid = (int) ($roadProperties['value_of_the_road_gid'] ?? 0);
+        if ($targetDistance <= 0.0) {
+            return $points[0];
+        }
 
-            // Если это федеральная трасса — нормативный дефолт 11.5т, если региональная (как 22Р) — 10.0т, иначе 6.0т
-            if ($roadClassGid === 83717) {
-                $defaultLoad = 11.5;
-            } elseif ($roadClassGid === 83718) {
-                $defaultLoad = 10.0;
-            } else {
-                $defaultLoad = 10.0; // Безопасный дефолт общего пользования
+        if ($targetDistance >= $cumulative[$lastIndex]) {
+            return $points[$lastIndex];
+        }
+
+        for ($i = 0; $i < $lastIndex; $i++) {
+            if ($targetDistance > $cumulative[$i + 1]) {
+                continue;
             }
 
-            // Запрашиваем у AxleLoadService правильный цвет для этой нагрузки (Зеленый или Оранжевый)
-            // Внимание: метод resolveColor в AxleLoadService должен быть объявлен как public!
-            $fallbackColor = $this->axleLoad->resolveColor($defaultLoad);
+            $segmentLength = $cumulative[$i + 1] - $cumulative[$i];
+            $t = $segmentLength > 0.0
+                ? ($targetDistance - $cumulative[$i]) / $segmentLength
+                : 0.0;
 
             return [
-                [
-                    'points' => array_column($projectedPoints, 'point'),
-                    'color' => $fallbackColor, // Маршрут станет сочным оранжевым/зеленым без черных дыр!
-                    'road_properties' => array_merge($roadProperties, [
-                        'max_axle_load' => $defaultLoad,
-                        'is_fallback_nominal' => true
-                    ]),
-                    'start_m' => $segmentMinM,
-                    'end_m' => $segmentMaxM,
-                ]
-            ];
-        }
-        // =========================================================================
-
-        $breakpoints = [$segmentMinM, $segmentMaxM];
-        foreach ($restrictions as $restriction) {
-            $startM = $this->parseMeasure($restriction['start'] ?? '');
-            $endM = $this->parseMeasure($restriction['finish'] ?? '');
-
-            if ($startM > $segmentMinM && $startM < $segmentMaxM) {
-                $breakpoints[] = $startM;
-            }
-            if ($endM > $segmentMinM && $endM < $segmentMaxM) {
-                $breakpoints[] = $endM;
-            }
-        }
-
-        sort($breakpoints);
-        $breakpoints = array_values(array_unique($breakpoints, SORT_NUMERIC));
-
-        $intervals = [];
-        for ($i = 0; $i < count($breakpoints) - 1; $i++) {
-            $subStartM = $breakpoints[$i];
-            $subEndM = $breakpoints[$i + 1];
-
-            $axleData = $this->axleLoad->resolveRestrictionsForInterval($subStartM, $subEndM, $restrictions);
-
-            $intervals[] = [
-                'start_m' => $subStartM,
-                'end_m' => $subEndM,
-                'points' => [],
-                'color' => $axleData['statusColor'],
-                'axle_data' => $axleData
+                $points[$i][0] + (($points[$i + 1][0] - $points[$i][0]) * $t),
+                $points[$i][1] + (($points[$i + 1][1] - $points[$i][1]) * $t),
             ];
         }
 
-        $totalPoints = count($projectedPoints);
-
-        for ($j = 0; $j < $totalPoints - 1; $j++) {
-            $p1 = $projectedPoints[$j];
-            $p2 = $projectedPoints[$j + 1];
-
-            $m1 = $p1['m'];
-            $m2 = $p2['m'];
-
-            $rStartM = min($m1, $m2);
-            $rEndM = max($m1, $m2);
-
-            foreach ($intervals as &$interval) {
-                if ($rEndM >= $interval['start_m'] && $rStartM <= $interval['end_m']) {
-                    $ptA = $p1['point'];
-                    $ptB = $p2['point'];
-                    $mDist = abs($m2 - $m1);
-
-                    if ($mDist > 0.001) {
-                        if ($rStartM < $interval['start_m'] && $rEndM > $interval['start_m']) {
-                            $ratio = ($interval['start_m'] - $rStartM) / $mDist;
-                            $actualRatio = ($m2 > $m1) ? $ratio : (1.0 - $ratio);
-                            $ptA = $this->interpolatePoint($p1['point'], $p2['point'], max(0.0, min(1.0, $actualRatio)));
-                        }
-
-                        if ($rStartM < $interval['end_m'] && $rEndM > $interval['end_m']) {
-                            $ratio = ($interval['end_m'] - $rStartM) / $mDist;
-                            $actualRatio = ($m2 > $m1) ? $ratio : (1.0 - $ratio);
-                            $ptB = $this->interpolatePoint($p1['point'], $p2['point'], max(0.0, min(1.0, $actualRatio)));
-                        }
-                    }
-
-                    if (empty($interval['points'])) {
-                        $interval['points'][] = $ptA;
-                    }
-                    $interval['points'][] = $ptB;
-                }
-            }
-        }
-        unset($interval);
-
-        $result = [];
-        foreach ($intervals as $interval) {
-            $cleanPoints = [];
-            foreach ($interval['points'] as $pt) {
-                if (empty($cleanPoints) || end($cleanPoints) !== $pt) {
-                    $cleanPoints[] = $pt;
-                }
-            }
-
-            if (count($cleanPoints) >= 2) {
-                $mergedProperties = array_merge($roadProperties, [
-                    'max_axle_load' => $interval['axle_data']['max_axle_load'],
-                    'km_start' => $interval['axle_data']['km_start'],
-                    'km_finish' => $interval['axle_data']['km_finish'],
-                    'skdf_road_name' => $interval['axle_data']['road_name'],
-                ]);
-
-                $result[] = [
-                    'points' => $cleanPoints,
-                    'color' => $interval['color'],
-                    'road_properties' => $mergedProperties,
-                    'start_m' => $interval['start_m'],
-                    'end_m' => $interval['end_m'],
-                ];
-            }
-        }
-
-        // Финальный фоллбэк: если из-за микроокруглений интервалы не собрали точки,
-        // мы точно так же применяем здесь нормативный цвет класса дороги вместо черного хардкода
-        if (empty($result)) {
-            $roadClassGid = (int) ($roadProperties['value_of_the_road_gid'] ?? 0);
-            $defaultLoad = ($roadClassGid === 83717) ? 11.5 : 10.0;
-            $fallbackColor = $this->axleLoad->resolveColor($defaultLoad);
-
-            $result[] = [
-                'points' => array_column($projectedPoints, 'point'),
-                'color' => $fallbackColor,
-                'road_properties' => array_merge($roadProperties, [
-                    'max_axle_load' => $defaultLoad,
-                    'is_fallback_nominal' => true
-                ]),
-                'start_m' => $segmentMinM,
-                'end_m' => $segmentMaxM,
-            ];
-        }
-
-        return $result;
+        return $points[$lastIndex];
     }
 
+    private function calculateRouteAngleAtSample(
+        array $samples,
+        int $index,
+        float $fallback,
+    ): float {
+        $count = count($samples);
 
-    private function interpolatePoint(array $p1, array $p2, float $ratio): array
+        if ($count < 2) {
+            return $fallback;
+        }
+
+        $start = $samples[max(0, $index - 1)];
+        $end = $samples[min($count - 1, $index + 1)];
+
+        if ($this->pointsEqual($start, $end)) {
+            return $fallback;
+        }
+
+        return $this->calculateSegmentAngle($start, $end);
+    }
+
+    private function calculateLineAngle(array $points): float
     {
-        return [
-            $p1[0] + ($p2[0] - $p1[0]) * $ratio,
-            $p1[1] + ($p2[1] - $p1[1]) * $ratio,
-        ];
+        return $this->calculateSegmentAngle(
+            $points[0],
+            $points[count($points) - 1],
+        );
     }
 
-    private function getColorForMRange(
-        float $startM,
-        float $endM,
-        array $restrictions,
-    ): string {
-        $defaultColor = '#22C55E';
-        $maxRestrictionLoad = null;
-        $hasRestriction = false;
-
-        foreach ($restrictions as $restriction) {
-            $restrictionStart = $this->parseMeasure($restriction['start'] ?? '');
-            $restrictionEnd = $this->parseMeasure($restriction['finish'] ?? '');
-            $maxAxleLoad = (float) ($restriction['os']['name'] ?? 11.5);
-
-            if ($startM <= $restrictionEnd && $endM >= $restrictionStart) {
-                $hasRestriction = true;
-                if ($maxRestrictionLoad === null || $maxAxleLoad < $maxRestrictionLoad) {
-                    $maxRestrictionLoad = $maxAxleLoad;
-                }
-            }
+    private function calculateLocalRoadAngle(
+        array $line,
+        int $segmentIndex,
+    ): ?float {
+        if (count($line) < 2) {
+            return null;
         }
 
-        if (!$hasRestriction || $maxRestrictionLoad === null) {
-            return $defaultColor;
+        $segmentIndex = max(0, min($segmentIndex, count($line) - 2));
+        $startIndex = max(0, $segmentIndex - 1);
+        $endIndex = min(count($line) - 1, $segmentIndex + 2);
+
+        $start = $line[$startIndex];
+        $end = $line[$endIndex];
+
+        if ($this->pointsEqual($start, $end)) {
+            return null;
         }
 
-        return $this->resolveStatusColor($maxRestrictionLoad);
+        return $this->calculateSegmentAngle($start, $end);
     }
 
-    private function parseMeasure(?string $value): float
+    private function calculateSegmentAngle(array $a, array $b): float
     {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
+        $lat0 = deg2rad(($a[1] + $b[1]) / 2.0);
+        $dx = ($b[0] - $a[0]) * cos($lat0);
+        $dy = $b[1] - $a[1];
 
-        $value = trim((string) $value);
+        $angle = rad2deg(atan2($dx, $dy));
 
-        if (strpos($value, '+') !== false) {
-            [$km, $meters] = array_pad(explode('+', $value), 2, 0);
-            return ((float) $km * 1000.0) + (float) $meters;
-        }
-
-        if (is_numeric($value)) {
-            return (float) $value * 1000.0;
-        }
-
-        return 0.0;
+        return $angle < 0.0 ? $angle + 360.0 : $angle;
     }
 
-    private function resolveStatusColor(float $axleLoad): string
+    private function calculateUndirectedAngleDifference(
+        float $angle1,
+        float $angle2,
+    ): float {
+        $diff = abs($angle1 - $angle2);
+        $diff = min($diff, 360.0 - $diff);
+
+        return min($diff, abs(180.0 - $diff));
+    }
+
+    private function percentile(array $values, float $percentile): float
     {
-        if ($axleLoad <= 6) {
-            return '#EF4444';
+        if ($values === []) {
+            return INF;
         }
-        if ($axleLoad <= 10) {
-            return '#F59E0B';
-        }
-        return '#22C55E';
+
+        sort($values, SORT_NUMERIC);
+        $index = (int) round((count($values) - 1) * $percentile);
+
+        return (float) $values[$index];
     }
 
     private function extractRouteSegments(array $routeFeatures): array
@@ -743,73 +1058,426 @@ final readonly class RoadAxleService
 
         foreach ($routeFeatures as $feature) {
             $geometry = $feature['geometry'] ?? null;
-            $properties = $feature['properties'] ?? [];
 
-            if (!$geometry) {
+            if (!is_array($geometry)) {
                 continue;
             }
 
-            // Извлекаем chunkDistance (приоритет)
-            $chunkDistance = 0;
-            if (isset($properties['chunkDistance'])) {
-                $chunkDistance = (float) $properties['chunkDistance'];
+            foreach ($this->extractGeometryLines($geometry) as $line) {
+                if (count($line) >= 2) {
+                    $segments[] = [
+                        'points' => $line,
+                        'properties' => $feature['properties'] ?? [],
+                    ];
+                }
             }
-
-            // Извлекаем chunkAngle (приоритет)
-            $chunkAngle = 0;
-            if (isset($properties['chunkAngle'])) {
-                $chunkAngle = (float) $properties['chunkAngle'];
-            }
-
-            // Извлекаем distance из Yandex (fallback)
-            $distance = 0;
-            if (isset($properties['distance']['value'])) {
-                $distance = (float) $properties['distance']['value'];
-            } elseif (isset($properties['rawProperties']['SegmentMetaData']['Distance']['value'])) {
-                $distance = (float) $properties['rawProperties']['SegmentMetaData']['Distance']['value'];
-            }
-
-            $coords = match ($geometry['type']) {
-                'LineString' => $geometry['coordinates'],
-                'MultiLineString' => array_merge(...$geometry['coordinates']),
-                default => [],
-            };
-
-            if (empty($coords)) {
-                continue;
-            }
-
-            $segments[] = [
-                'points' => $coords,
-                'distance' => $distance, // из Yandex
-                'chunkDistance' => $chunkDistance, // вычисленная на фронтенде
-                'chunkAngle' => $chunkAngle, // вычисленный на фронтенде
-                'properties' => $properties,
-            ];
         }
 
         return $segments;
     }
 
-    private function buildFeatureCollection(array $coloredSegments): array
+    private function groupFeaturesByPartId(array $features): array
     {
-        $features = [];
+        $grouped = [];
 
-        foreach ($coloredSegments as $segment) {
-            $points = $segment['points'] ?? [];
-            $color = $segment['color'] ?? '#22C55E';
-            $roadProperties = $segment['road_properties'] ?? [];
+        foreach ($features as $feature) {
+            $properties = $feature['properties'] ?? [];
+            $partId = $properties['part_id']
+                ?? $properties['road_part_id']
+                ?? null;
 
-            if (empty($points) || count($points) < 2) {
+            if ($partId === null || $partId === '') {
                 continue;
             }
 
+            $grouped[(string) $partId][] = $feature;
+        }
+
+        return $grouped;
+    }
+
+    private function extractGeometryLines(array $geometry): array
+    {
+        $type = $geometry['type'] ?? null;
+        $coordinates = $geometry['coordinates'] ?? [];
+
+        if ($type === 'LineString') {
+            return count($coordinates) >= 2 ? [$coordinates] : [];
+        }
+
+        if ($type === 'MultiLineString') {
+            return array_values(array_filter(
+                $coordinates,
+                static fn(array $line): bool => count($line) >= 2,
+            ));
+        }
+
+        return [];
+    }
+
+    private function getFeatureKey(array $feature): string
+    {
+        $properties = $feature['properties'] ?? [];
+
+        return (string) (
+            $properties['id']
+            ?? $feature['id']
+            ?? spl_object_id((object) $feature)
+        );
+    }
+
+    private function pointsEqual(array $a, array $b): bool
+    {
+        return abs($a[0] - $b[0]) < 1e-10
+            && abs($a[1] - $b[1]) < 1e-10;
+    }
+
+    private function getAllRoads(array $bounds4326): array
+    {
+        $allFeatures = [];
+
+        foreach (self::LAYER_LOAD_MAP as $layer => $load) {
+            $features = $this->fetchLayer(
+                layer: $layer,
+                bounds4326: $bounds4326,
+            );
+
+            foreach ($features as $featureIndex => $feature) {
+                if (!is_array($feature) || !isset($feature['geometry'])) {
+                    continue;
+                }
+
+                $lines = $this->extractGeometryLines(
+                    $feature['geometry'] ?? [],
+                );
+
+                if ($lines === []) {
+                    error_log(sprintf(
+                        'WFS feature skipped: layer=%s index=%d invalid geometry',
+                        $layer,
+                        $featureIndex,
+                    ));
+                    continue;
+                }
+
+                $properties = $feature['properties'] ?? [];
+                if (!is_array($properties)) {
+                    $properties = [];
+                }
+
+                $color = $this->resolveStatusColor($load);
+
+                $properties['os'] = $load;
+                $properties['load_category'] = $load . 't';
+                $properties['source_layer'] = $layer;
+                $properties['max_axle_load'] = $load;
+                $properties['strokeColor'] = $color;
+                $properties['strokeWidth'] = 8;
+                $properties['strokeOpacity'] = 0.9;
+                $properties['hintContent'] = $this->getHintContent($color);
+
+                $sourceId = (string) (
+                    $feature['id']
+                    ?? $properties['id']
+                    ?? $featureIndex
+                );
+
+                $feature['id'] = sprintf(
+                    '%s-%s',
+                    $layer,
+                    $sourceId,
+                );
+                $feature['properties'] = $properties;
+                $allFeatures[] = $feature;
+            }
+
+            error_log(sprintf(
+                'Layer %s: loaded %d features',
+                $layer,
+                count($features),
+            ));
+        }
+
+        return $allFeatures;
+    }
+
+    private function fetchLayer(
+        string $layer,
+        array $bounds4326,
+    ): array {
+        $allFeatures = [];
+        $startIndex = 0;
+        $pageCount = 0;
+        $bbox = implode(',', $bounds4326) . ',EPSG:4326';
+
+        while ($pageCount < self::MAX_PAGES) {
+            $params = [
+                'SERVICE' => 'WFS',
+                'VERSION' => '2.0.0',
+                'REQUEST' => 'GetFeature',
+                'TYPENAME' => 'skdf_open:' . $layer,
+                'OUTPUTFORMAT' => 'application/json',
+                'SRSNAME' => 'EPSG:4326',
+                'BBOX' => $bbox,
+                'COUNT' => self::MAX_FEATURES,
+                'STARTINDEX' => $startIndex,
+                'SORTBY' => 'road_id A,start_km A',
+            ];
+
+            try {
+                $response = $this->http->get(
+                    self::WFS_BASE_URL,
+                    $params,
+                );
+            } catch (\Throwable $exception) {
+                error_log(sprintf(
+                    'WFS request failed: layer=%s page=%d offset=%d error=%s',
+                    $layer,
+                    $pageCount,
+                    $startIndex,
+                    $exception->getMessage(),
+                ));
+                break;
+            }
+
+            $features = $response['features'] ?? [];
+
+            if (!is_array($features)) {
+                $features = [];
+            }
+
+            $returned = count($features);
+
+            if ($returned === 0) {
+                break;
+            }
+
+            $allFeatures = array_merge($allFeatures, $features);
+
+            $numberMatched = $this->resolveNumberMatched(
+                response: $response,
+                returned: $returned,
+            );
+
+            error_log(sprintf(
+                'WFS page: layer=%s page=%d offset=%d returned=%d matched=%d',
+                $layer,
+                $pageCount,
+                $startIndex,
+                $returned,
+                $numberMatched,
+            ));
+
+            $startIndex += $returned;
+            $pageCount++;
+
+            if (
+                $returned < self::MAX_FEATURES ||
+                $startIndex >= $numberMatched
+            ) {
+                break;
+            }
+        }
+
+        if ($pageCount >= self::MAX_PAGES) {
+            error_log(sprintf(
+                'Max pages reached for layer %s',
+                $layer,
+            ));
+        }
+
+        return $allFeatures;
+    }
+
+    private function normalizeBounds4326(array $bounds): ?array
+    {
+        if (count($bounds) < 4) {
+            return null;
+        }
+
+        foreach (array_slice($bounds, 0, 4) as $value) {
+            if (!is_numeric($value)) {
+                return null;
+            }
+        }
+
+        $west = (float) $bounds[0];
+        $south = (float) $bounds[1];
+        $east = (float) $bounds[2];
+        $north = (float) $bounds[3];
+
+        if ($west > $east) {
+            [$west, $east] = [$east, $west];
+        }
+
+        if ($south > $north) {
+            [$south, $north] = [$north, $south];
+        }
+
+        $west = max(-180.0, min(180.0, $west));
+        $east = max(-180.0, min(180.0, $east));
+        $south = max(-90.0, min(90.0, $south));
+        $north = max(-90.0, min(90.0, $north));
+
+        if (
+            abs($east - $west) < 1e-10 ||
+            abs($north - $south) < 1e-10
+        ) {
+            return null;
+        }
+
+        return [$west, $south, $east, $north];
+    }
+
+    private function limitBounds4326(array $bounds): array
+    {
+        [$west, $south, $east, $north] = $bounds;
+        $width = $east - $west;
+        $height = $north - $south;
+
+        if (
+            $width <= self::MAX_BBOX_SIZE_DEGREES &&
+            $height <= self::MAX_BBOX_SIZE_DEGREES
+        ) {
+            return $bounds;
+        }
+
+        $centerLongitude = ($west + $east) / 2.0;
+        $centerLatitude = ($south + $north) / 2.0;
+        $halfWidth = min($width, self::MAX_BBOX_SIZE_DEGREES) / 2.0;
+        $halfHeight = min($height, self::MAX_BBOX_SIZE_DEGREES) / 2.0;
+
+        $limited = [
+            $centerLongitude - $halfWidth,
+            $centerLatitude - $halfHeight,
+            $centerLongitude + $halfWidth,
+            $centerLatitude + $halfHeight,
+        ];
+
+        error_log(sprintf(
+            'Route BBOX truncated: original=[%s] limited=[%s]',
+            implode(', ', $bounds),
+            implode(', ', $limited),
+        ));
+
+        return $limited;
+    }
+
+    private function resolveNumberMatched(
+        array $response,
+        int $returned,
+    ): int {
+        $value = $response['numberMatched']
+            ?? $response['totalFeatures']
+            ?? null;
+
+        if (is_int($value) || is_float($value)) {
+            return max((int) $value, $returned);
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return max((int) $value, $returned);
+        }
+
+        return $returned === self::MAX_FEATURES
+            ? PHP_INT_MAX
+            : $returned;
+    }
+
+    private function haversineDistance(array $p1, array $p2): float
+    {
+        $lat1 = deg2rad($p1[1]);
+        $lon1 = deg2rad($p1[0]);
+        $lat2 = deg2rad($p2[1]);
+        $lon2 = deg2rad($p2[0]);
+
+        $dLat = $lat2 - $lat1;
+        $dLon = $lon2 - $lon1;
+
+        $a = sin($dLat / 2.0) ** 2
+            + cos($lat1) * cos($lat2) * sin($dLon / 2.0) ** 2;
+        $a = max(0.0, min(1.0, $a));
+        $centralAngle = 2.0 * atan2(sqrt($a), sqrt(1.0 - $a));
+
+        return self::EARTH_RADIUS_METERS * $centralAngle;
+    }
+
+    private function resolveStatusColor(float $axleLoad): string
+    {
+        if ($axleLoad <= 6.0) {
+            return '#EF4444';
+        }
+
+        if ($axleLoad <= 10.0) {
+            return '#F59E0B';
+        }
+
+        return '#22C55E';
+    }
+
+    private function getHintContent(string $color): string
+    {
+        return match ($color) {
+            '#EF4444' => '⚠️ Критическое ограничение (≤ 6 т)',
+            '#F59E0B' => '⚠️ Ограничение (6–10 т)',
+            default => '✅ Проезд разрешен (> 10 т)',
+        };
+    }
+
+    private function buildFeatureCollection(
+        array $segments,
+        int $chunkIndex,
+    ): array {
+        $features = [];
+
+        foreach ($segments as $segmentIndex => $segment) {
+            if (count($segment['points'] ?? []) < 2) {
+                continue;
+            }
+
+            $properties = $segment['road_properties'] ?? [];
+
+            $partId = (string) (
+                $properties['part_id']
+                ?? 'part'
+            );
+
+            $sourceLayer = (string) (
+                $properties['source_layer']
+                ?? 'layer'
+            );
+
+            $featureId = (string) (
+                $properties['feature_id']
+                ?? 'feature'
+            );
+
             $features[] = [
                 'type' => 'Feature',
-                'properties' => $this->buildProperties($color, $roadProperties),
+                'id' => sprintf(
+                    'route-axle-chunk-%d-segment-%d-part-%s-feature-%s-layer-%s',
+                    $chunkIndex,
+                    $segmentIndex,
+                    $partId,
+                    $featureId,
+                    $sourceLayer,
+                ),
+                'properties' => array_merge(
+                    [
+                        'chunkIndex' => $chunkIndex,
+                        'strokeColor' => $segment['color'],
+                        'strokeWidth' => 8,
+                        'strokeOpacity' => 0.9,
+                        'hintContent' =>
+                            $this->getHintContent(
+                                $segment['color'],
+                            ),
+                    ],
+                    $properties,
+                ),
                 'geometry' => [
                     'type' => 'LineString',
-                    'coordinates' => $points,
+                    'coordinates' => $segment['points'],
                 ],
             ];
         }
@@ -818,35 +1486,6 @@ final readonly class RoadAxleService
             'type' => 'FeatureCollection',
             'features' => $features,
         ];
-    }
-
-    private function buildProperties(string $color, array $roadProperties): array
-    {
-        $strokeWidth = 8;
-        $hintContent = 'Проезд разрешен';
-
-        if ($color === '#EF4444') {
-            $strokeWidth = 8;
-            $hintContent = '⚠️ Критическое ограничение (≤ 6 т)';
-        } elseif ($color === '#F59E0B') {
-            $strokeWidth = 8;
-            $hintContent = '⚠️ Ограничение (6-10 т)';
-        } else {
-            $hintContent = '✅ Проезд разрешен (> 10 т)';
-        }
-
-        $properties = [
-            'strokeColor' => $color,
-            'strokeWidth' => $strokeWidth,
-            'strokeOpacity' => 0.9,
-            'hintContent' => $hintContent,
-        ];
-
-        if (!empty($roadProperties)) {
-            $properties = array_merge($properties, $roadProperties);
-        }
-
-        return $properties;
     }
 
     private function createEmptyFeatureCollection(): array

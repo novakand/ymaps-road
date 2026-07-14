@@ -1,8 +1,6 @@
 <div>
 
-
     <div [formGroup]="form">
-
         <div class="flex items-center justify-between p-6 ">
             <ng-container *ngIf="noProgress">
                 <p-skeleton
@@ -16,12 +14,9 @@
                     <span class="p-dialog-title font-semibold text-xl">
                         Маршрут
                     </span>
-
-
                 </div>
                 <div class="w-spacer">&nbsp;</div>
                 <div class="flex">
-
                     <p-button
                         [rounded]="true"
                         [text]="true"
@@ -114,7 +109,6 @@
                     ></p-skeleton>
                 </div>
             </ng-container>
-
             <div *ngIf="!noProgress">
                 <p-timeline
                     #timeline
@@ -347,7 +341,7 @@
 
                             <label
                                 for="layer-axle"
-                                pTooltip="Автоматическое обновление данных нормативная нагрузка, тонн/ось (использовать для более протяженных маршрутов)"
+                                pTooltip="Получение данных о нагрузке на ось"
                             >
                                 Нагрузка на ось
                             </label>
@@ -579,20 +573,22 @@
                             class="border border-surface rounded-lg p-4 mb-3"
                         >
 
-                            <div class="flex justify-between items-center mb-3">
+                            <div class="flex justify-between items-center mb-4">
 
                                 <span class="text-500">
-                                    Максимальная нагрузка
+                                    Допустимая нагрузка
                                 </span>
 
                                 <span
-                                    class="font-bold text-lg"
+                                    class="font-bold text-xl"
                                     [style.color]="axle.properties.statusColor"
                                 >
-                                    {{ axle.properties.os?.name }} т/ось
+                                    {{ axle.properties.max_axle_load }} т/ось
                                 </span>
 
                             </div>
+
+
 
                             <div class="flex justify-between mb-2">
 
@@ -601,7 +597,9 @@
                                 </span>
 
                                 <span class="font-medium">
-                                    {{ axle.properties.start }} — {{ axle.properties.finish }}
+                                    {{ axle.properties.start_km }}
+                                    —
+                                    {{ axle.properties.finish_km }} км
                                 </span>
 
                             </div>
@@ -609,23 +607,71 @@
                             <div class="flex justify-between mb-2">
 
                                 <span class="text-500">
-                                    Длина участка
+                                    Road ID
                                 </span>
 
                                 <span class="font-medium">
-                                    {{ axle.properties.length }}
+                                    {{ axle.properties.road_id }}
                                 </span>
 
                             </div>
 
-                            <div class="flex justify-between">
+                            <div class="flex justify-between mb-2">
 
                                 <span class="text-500">
-                                    Road Part ID
+                                    Part ID
                                 </span>
 
                                 <span class="font-medium">
-                                    {{ axle.properties.road_part_id }}
+                                    {{ axle.properties.part_id }}
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Полос
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.lanes }}
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Скорость
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.top_speed }} км/ч
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Ширина проезжей части
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.roadway_width }} м
+                                </span>
+
+                            </div>
+
+                            <div class="flex justify-between mb-2">
+
+                                <span class="text-500">
+                                    Интенсивность
+                                </span>
+
+                                <span class="font-medium">
+                                    {{ axle.properties.traffic | number }}
                                 </span>
 
                             </div>
@@ -676,6 +722,21 @@
             <div>
                 <div class="grid grid-cols-12 gap-4">
 
+
+
+                    <div class="col-span-12 flex flex-row items-center gap-2">
+                        <p-toggleswitch
+                            [(ngModel)]="layers.axleBbox"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="layerStateService.update({ axleBbox: $event })"
+                            inputId="layer-routes"
+                        />
+
+                        <label for="layer-routes">
+                            Ограничения на ось
+                        </label>
+                    </div>
+
                     <div class="col-span-12 flex flex-row items-center gap-2">
                         <p-toggleswitch
                             [(ngModel)]="layers.active"
@@ -703,16 +764,6 @@
                     </div>
 
                     <div class="col-span-12 flex flex-row items-center gap-2">
-                        <!-- <p-toggleswitch
-                            [(ngModel)]="layers.intersections"
-                            [ngModelOptions]="{ standalone: true }"
-                            (ngModelChange)="layerStateService.update({ intersections: $event })"
-                            inputId="layer-raw"
-                        />
-
-                        <label for="layer-raw">
-                            Пересечения с маршрутом
-                        </label> -->
                     </div>
                 </div>
 
@@ -721,7 +772,5 @@
         </div>
 
     </p-drawer>
-
-
 
 </div>

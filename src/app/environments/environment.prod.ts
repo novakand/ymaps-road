@@ -4,7 +4,8 @@ export const environment: IEnvironment = {
     debounceTime: 300,
     production: true,
     ssoUri: '',
-    apiUri: '/wp-json/routegis/v1',
+    apiUri: '',
+    apiBaseUrl: 'http://localhost:8002',
     apiUriMapbox: '',
     accessTokenMapBox: ''
 }

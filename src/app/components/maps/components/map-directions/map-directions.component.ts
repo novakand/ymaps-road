@@ -120,8 +120,9 @@ export class MapDirectionComponent implements AfterViewInit, OnInit, OnDestroy {
     public layers = {
         intersections: true,
         active: true,
-        axle: true,
+        axle: false,
         alternative: true,
+        axleBbox: false
     };
     public isLargeScreen: boolean;
     private timelineDataSubject = new BehaviorSubject<any[]>([]);
@@ -172,11 +173,8 @@ export class MapDirectionComponent implements AfterViewInit, OnInit, OnDestroy {
                 takeUntil(this._destroy$)
             )
             .subscribe(state => {
-
                 this.selectedRoad = state.road;
-
                 this.isVisibleRoadSelection = true;
-
                 this._cdr.detectChanges();
 
             });

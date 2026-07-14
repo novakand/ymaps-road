@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 use RouteGIS\Config\Config;
 use RouteGIS\Http\CurlClient;
-use RouteGIS\Services\AxleLoadService;
 use RouteGIS\Services\GeometryService;
 use RouteGIS\Services\RgisService;
-use RouteGIS\Services\RoadAxleService;
-use RouteGIS\Services\RoadDetailsService;
-use RouteGIS\Services\RoadLayerService;
 use RouteGIS\Services\RoadSelectionService;
-use RouteGIS\Services\RouteFilterService;
-use RouteGIS\Services\SkdfService;
-
+use RouteGIS\Services\RoadAxleService;
+use RouteGIS\Services\RoadBboxService;
 header('Content-Type: application/json; charset=utf-8');
 
 header('Access-Control-Allow-Origin: *');
@@ -25,20 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+
+$apiDir = rtrim(realpath(__DIR__ . '/..'));
+
+require $apiDir . '/vendor/autoload.php';
 
 $config = Config::load(
-    dirname(__DIR__) . '/config/config.php'
+    $apiDir . '/config/config.php'
 );
 
 $http = new CurlClient();
 
 $rgis = new RgisService($http, $config);
-$skdf = new SkdfService($http, $config);
 $geometry = new GeometryService();
-
-$routeFilter = new RouteFilterService($geometry);
-$axleLoad = new AxleLoadService();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = '/' . basename($path);
@@ -56,8 +50,8 @@ try {
 
             $service = new RoadSelectionService(
                 $rgis,
-                $skdf,
-                $geometry
+                $geometry,
+                $http
             );
 
             $result = $service->findRoadByPoint(
@@ -69,23 +63,29 @@ try {
             break;
 
         case '/road-axle':
-
-            $service = new RoadAxleService(
-                $rgis,
-                $skdf,
-                $routeFilter,
-                $axleLoad,
-                $geometry
-            );
-
+            $service = new RoadAxleService($http);
             $result = $service->analyze(
                 routeFeatures: $payload['route_features'] ?? [],
-                bounds3857: $payload['bounds'] ?? [],
-                zoom: (int) ($payload['zoom'] ?? 10)
+                bounds4326: $payload['bounds'] ?? [],
+                zoom: (int) ($payload['zoom'] ?? 14),
+                chunkIndex: (int) ($payload['chunkIndex'] ?? 0),
             );
-
             break;
 
+
+        case '/road-bbox':
+            $service = new RoadBboxService($http);
+
+            $bounds = $payload['bounds'] ?? [37.5, 55.5, 37.8, 55.8];
+            $layers = $payload['layers'] ?? null;
+            $zoom = (int) ($payload['zoom'] ?? 14);
+
+            $result = $service->getLayersByBbox(
+                bounds4326: $bounds,
+                layers: $layers,
+                zoom: $zoom
+            );
+            break;
 
         default:
 

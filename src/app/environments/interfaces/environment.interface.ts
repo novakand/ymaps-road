@@ -6,8 +6,9 @@ export interface IEnvironment {
   iconsUri?: string;
   accessTokenMapBox?: string;
   apiUriMapbox?: string;
+  apiBaseUrl?: string;
   apiUriGoogle?: string;
   apiKeyGoogle?: string;
   storageUri?: string;
-  baseURL?:string;
+  baseURL?: string;
 }

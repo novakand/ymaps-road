@@ -9,8 +9,10 @@ export class LayerStateService {
     private readonly _layers = new BehaviorSubject({
         intersections: true,
         active: true,
-        axle: true,
+        axle: false,
         alternative: true,
+        axleBbox: false
+
     });
 
     readonly layers$ = this._layers.asObservable();

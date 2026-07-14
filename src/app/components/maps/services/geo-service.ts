@@ -21,11 +21,8 @@ export class GeoService {
         latitude: number,
         zoom: number
     ): Observable<any> {
-
-        //https://ymaps-road.onrender.com
         return this.http.post<any>(
-            `https://ymaps-road.onrender.com/road-select`,
-            // `${this.api}/road-select`,
+            `${this.api}/road-select`,
             {
                 longitude,
                 latitude,
@@ -34,24 +31,37 @@ export class GeoService {
         );
     }
 
-    getRoadDetails(road: any): Observable<any> {
-        return this.http.post<any>(
-            `${this.api}/road-details`,
-            { road }
-        );
-    }
-
     getRoadAxle(
         routeFeatures: any[],
         bounds: number[],
+        zoom: number,
+        chunkIndex: number,
+    ): Observable<any> {
+
+        return this.http.post<any>(
+            `${this.api}/road-axle`,
+            {
+                route_features: routeFeatures,
+                bounds,
+                zoom,
+                chunkIndex,
+            }
+        );
+    }
+
+    getRoadBbox(
+
+        bounds: number[],
+        layers: any,
         zoom: number
     ): Observable<any> {
 
         return this.http.post<any>(
-            `https://ymaps-road.onrender.com/road-axle`,
+            `${this.api}/road-bbox`,
             {
-                route_features: routeFeatures,
+
                 bounds,
+                layers: layers,
                 zoom
             }
         );

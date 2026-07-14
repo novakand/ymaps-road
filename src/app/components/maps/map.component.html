@@ -213,6 +213,27 @@
     </ng-container>
 
 
+
+
+    <ng-container *ngIf="layers.axleBbox">
+      <ng-container *ngFor="let feature of roadBboxFeatures(); trackBy: trackById">
+        <y-map-feature [props]="{
+    source: 'road-selection-source-axle',
+    id: feature.id || feature.properties?.id,
+    geometry: feature.geometry,
+    properties: getFeatureProperties(feature),
+    style: {
+        stroke: [{
+            color: feature.properties?.strokeColor || '#191a1a',
+            width: feature.properties?.strokeWidth || 8,
+            opacity: feature.properties?.strokeOpacity || 0.9
+        }]
+    }
+  }" />
+      </ng-container>
+    </ng-container>
+
+
     @if (stepMarkerFeature) {
 
     <y-map-marker [props]="{ 
