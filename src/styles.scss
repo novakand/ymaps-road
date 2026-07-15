@@ -22,7 +22,7 @@ body {
 
 .ym-marker {
   position: relative;
-  transform: translate(0px, -12px); // центрируем
+  transform: translate(0px, -12px);
   pointer-events: auto;
 }
 
@@ -92,7 +92,6 @@ body {
 
 .slider-timeline .p-drawer-header {
   padding: 0 !important;
-  // margin-left: 4px;
   position: relative;
   margin-right: 2px;
   z-index: 1105;
@@ -122,11 +121,6 @@ gmp-advanced-marker {
 .p-megamenu {
   position: relative;
   overflow: visible !important;
-}
-
-.mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
-.mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
-  outline: none !important;
 }
 
 
