@@ -1241,12 +1241,7 @@ export class MapComponent {
         return {
             title: props.hintTitle,
             color: props.hintColor,
-            coords: props.geometry?.coordinates || null,
-            roadId: props.roadId,
-            roadPartId: props.roadPartId,
-            roadLength: props.roadLength,
-            startKm: props.start_km || props.startKm,
-            roadValue: props.roadValue
+            ...props
         };
     };
 
