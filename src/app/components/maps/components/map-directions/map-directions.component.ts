@@ -1,7 +1,7 @@
-import { CommonModule, NgFor, NgIf } from "@angular/common";
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, OnDestroy, OnInit, QueryList, signal, ViewChild, ViewChildren } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, OnDestroy, OnInit, QueryList, signal, ViewChildren } from "@angular/core";
 import { RouterModule } from "@angular/router";
-import { BehaviorSubject, debounceTime, delay, distinctUntilChanged, filter, map, Observable, of, pairwise, skip, startWith, Subject, Subscription, takeUntil, tap } from "rxjs";
+import { BehaviorSubject, debounceTime, delay, distinctUntilChanged, filter, map, Observable, skip, Subject, Subscription, takeUntil } from "rxjs";
 import { Timeline } from 'primeng/timeline';
 import { DialogModule } from 'primeng/dialog';
 import { ChipModule } from 'primeng/chip';
@@ -10,8 +10,7 @@ import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Reacti
 import { SpeedDialModule } from 'primeng/speeddial';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { MenuItem } from "primeng/api";
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenuModule } from 'primeng/contextmenu';
 import { InputGroupModule } from "primeng/inputgroup";
 import { InputGroupAddonModule } from "primeng/inputgroupaddon";
 import { AutoComplete, AutoCompleteModule } from "primeng/autocomplete";
@@ -24,7 +23,6 @@ import { ListboxModule } from 'primeng/listbox';
 import { DrawerModule } from 'primeng/drawer';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from "primeng/tooltip";
-import { deepEquals, isNotEmpty } from "@primeuix/utils";
 import { BreakpointObserver, BreakpointState } from "@angular/cdk/layout";
 import { StyleClassModule } from 'primeng/styleclass';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -115,8 +113,6 @@ export class MapDirectionComponent implements AfterViewInit, OnInit, OnDestroy {
     public pointTypePlace = PointTypePlace;
     public pointTypeField = PointTypeField;
     private _isMapSidebar = signal(true);
-
-
     public layers = {
         intersections: true,
         active: true,
@@ -175,13 +171,12 @@ export class MapDirectionComponent implements AfterViewInit, OnInit, OnDestroy {
             .subscribe(state => {
                 this.selectedRoad = state.road;
                 this.isVisibleRoadSelection = true;
-                this._cdr.detectChanges();
+                this._cdr.markForCheck();
 
             });
     }
 
     public onRoadSelectionHide(): void {
-
         this.selectedRoad = null;
         this._cdr.markForCheck();
         this.roadSelectionState.clear();

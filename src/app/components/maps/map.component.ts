@@ -411,12 +411,13 @@ export class MapComponent {
                         this.roadSelectionFeatures.set([]);
 
                         this.roadSelectionState.clear();
-
+                        this.cdr.detectChanges();
                         return;
                     }
                     const features = response?.features ?? [];
                     this.roadSelectionState.setSelection(features);
                     this.roadSelectionFeatures.set(features);
+                    this.cdr.detectChanges();
                 },
 
                 error: error => {
