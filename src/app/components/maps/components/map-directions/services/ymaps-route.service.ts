@@ -96,14 +96,12 @@ export class YandexRouteService {
         const activeRoute = this.route.getActiveRoute();
 
         if (!activeRoute) {
-            console.error('ACTIVE ROUTE IS NULL');
             return null;
 
         }
 
         const geoJson = activeRoute.model.getJson();
         if (!geoJson) {
-            console.error('GEOJSON IS NULL');
             return null;
 
         }
