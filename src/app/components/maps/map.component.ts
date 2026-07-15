@@ -394,42 +394,45 @@ export class MapComponent {
         event: any,
     ): void => {
 
-        const [longitude, latitude] = event.coordinates;
+        this.ngZone.run(() => {
+            const [longitude, latitude] = event.coordinates;
+            this._loadProgressService.show(9999);
+            this.cdr.detectChanges();
 
-        this.geoService
-            .selectRoad(
-                longitude,
-                latitude,
-                Math.ceil(this.map.zoom)
-            )
-            .subscribe({
+            this.geoService
+                .selectRoad(
+                    longitude,
+                    latitude,
+                    Math.ceil(this.map.zoom)
+                )
+                .subscribe({
 
-                next: response => {
+                    next: response => {
+                        this._loadProgressService.hide(9999);
+                        if (!response) {
 
-                    if (!response) {
+                            this.roadSelectionFeatures.set([]);
 
-                        this.roadSelectionFeatures.set([]);
-
-                        this.roadSelectionState.clear();
+                            this.roadSelectionState.clear();
+                            this.cdr.detectChanges();
+                            return;
+                        }
+                        const features = response?.features ?? [];
+                        this.roadSelectionState.setSelection(features);
+                        this.roadSelectionFeatures.set(features);
                         this.cdr.detectChanges();
-                        return;
+                    },
+
+                    error: error => {
+                        this._loadProgressService.hide(9999);
+                        console.error(error);
+                        this.roadSelectionFeatures.set([]);
+                        this.roadSelectionState.clear();
+
                     }
-                    const features = response?.features ?? [];
-                    this.roadSelectionState.setSelection(features);
-                    this.roadSelectionFeatures.set(features);
-                    this.cdr.detectChanges();
-                },
 
-                error: error => {
-
-                    console.error(error);
-                    this.roadSelectionFeatures.set([]);
-                    this.roadSelectionState.clear();
-
-                }
-
-            });
-
+                });
+        });
     };
 
     private getStepCoordinate(step: GeoJSON.Feature): [number, number] | null {
