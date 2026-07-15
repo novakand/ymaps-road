@@ -741,10 +741,6 @@ export class DirectionService {
 
         const state = this.directionState.getState();
 
-        // console.log('Origin value:', state.origin.value);
-        // console.log('Destination value:', state.destination.value);
-        // console.log('Waypoints:', state.waypoints.map(w => w.value));
-
         if (
             !state.origin.value ||
             !state.destination.value

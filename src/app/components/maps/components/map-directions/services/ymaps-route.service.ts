@@ -234,7 +234,7 @@ export class YandexRouteService {
             return;
         }
         this.destroy();
-        //this.route.model.setReferencePoints([]);
+        this.route = null;
 
         this.routeChangedSubject.next(null as any);
     }
@@ -296,9 +296,7 @@ export class YandexRouteService {
                     });
 
                     this.bindEvents();
-
                     const onSuccess = () => {
-
                         this.route.model.events.remove(
                             'requestsuccess',
                             onSuccess
@@ -309,13 +307,20 @@ export class YandexRouteService {
                             onFail
                         );
 
-                        observer.next(
-                            this.buildRouteData()
-                        );
+                        const routeData = this.buildRouteData();
 
+                        if (!routeData) {
+                            observer.error({
+                                code: 'ROUTE_NOT_FOUND',
+                                message: 'Маршрут не найден'
+                            });
+                            return;
+                        }
+
+                        observer.next(routeData);
                         observer.complete();
-
                     };
+
 
                     const onFail = (e: any) => {
 
@@ -444,28 +449,11 @@ export class YandexRouteService {
 
     }
 
-    // public destroy(): void {
-
-    //     if (!this.route) {
-    //         return;
-    //     }
-
-    //       this.route = null;
-
-    // }
-
-
     public destroy(): void {
 
         if (!this.route) {
             return;
         }
-
-        // this.route.model.events.removeAll();
-
-        // this.route.events.removeAll();
-
-        // this.route = null;
 
     }
 
@@ -607,59 +595,31 @@ export interface IYandexRouteData {
     summary: {
 
         distance: any;
-
         duration: any;
-
         durationInTraffic: any;
-
         hasTolls: boolean;
-
         blocked: boolean;
-
         type: string;
-
     };
     routeModel: any;
-
     routes: IYandexRoute[];
-
     geoJson: GeoJSON.FeatureCollection;
-
     routeGeoJson: GeoJSON.FeatureCollection;
-
     steps: GeoJSON.Feature[];
-
     referencePoints: any[];
-
     wayPoints: any;
-
     viaPoints: any;
-
     segments: any;
-
-
-
 }
 
 
 export interface IYandexRoute {
-
     index: number;
-
     active: boolean;
-
     distance: any;
-
     duration: any;
-
     durationInTraffic: any;
-
     blocked: boolean;
-
     type: string;
-
     geoJson: GeoJSON.FeatureCollection;
-
-
-
 }
