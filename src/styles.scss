@@ -109,8 +109,9 @@ body {
   --font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   --pin-color: #F44336;
   --scrollbar-track: var(--ground-background);
-  --scrollbar-thumb: #e2e8f0;
+  --scrollbar-thumb: #9b9d9f;
   --scrollbar-thumb-hover: #fff;
+  --scrollbar-track: #fff;
   --scrollbar-width: 1px;
 }
 
@@ -1253,8 +1254,6 @@ small.ng-invalid.ng-dirty {
 }
 
 :root {
-  --scrollbar-track: var(--ground-background);
-  --scrollbar-thumb: var(--p-toolbar-border-color);
   --scrollbar-thumb-hover: #fff;
   --scrollbar-width: 1px;
 }
