@@ -153,11 +153,11 @@
       </ng-container>
     </ng-container>
 
-    <y-map-feature-data-source [props]="{ id: 'skdf-axle-source' }" />
-    <y-map-layer [props]="{ source: 'skdf-axle-source', type: 'features', zIndex: 1400 }" />
+    <!-- <y-map-feature-data-source [props]="{ id: 'skdf-axle-source' }" />
+    <y-map-layer [props]="{ source: 'skdf-axle-source', type: 'features', zIndex: 1400 }" /> -->
 
-    <y-map-feature-data-source [props]="{ id: 'skdf-axle-raw-source' }" />
-    <y-map-layer [props]="{ source: 'skdf-axle-raw-source', type: 'features', zIndex: 1800 }" />
+    <!-- <y-map-feature-data-source [props]="{ id: 'skdf-axle-raw-source' }" />
+    <y-map-layer [props]="{ source: 'skdf-axle-raw-source', type: 'features', zIndex: 1800 }" /> -->
 
 
     <y-map-feature-data-source [props]="{ id: 'road-selection-source' }" />
@@ -256,7 +256,6 @@
             <span class="ym-hint__road-name">{{ context?.hint?.title }}</span>
           </div>
 
-          <!-- Основные характеристики дороги -->
           <div class="ym-hint__body">
             <div
               class="ym-hint__row"
